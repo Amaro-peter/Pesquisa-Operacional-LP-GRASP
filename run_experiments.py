@@ -110,6 +110,39 @@ def construct_lp_biased_solution(
         print(f"LP-biased initial open: {len(state.open_facilities)}, cost: {state.total_cost:,.2f}")
     return state
 
+def construct_uniform_solution(
+    instance: UFLPInstance,
+    prob: float,
+    verbose: bool = False
+) -> SolutionState:
+    """Construct an initial solution where each facility is opened with a uniform probability."""
+    state = SolutionState()
+    for f in instance.facilities:
+        if random.random() < prob:
+            state.open_facilities.add(f)
+            
+    if not state.open_facilities:
+        best_f = min(
+            instance.facilities,
+            key=lambda f: (
+                instance.setup_costs[f]
+                + sum(instance.service_costs[u][f] for u in instance.customers)
+            ),
+        )
+        state.open_facilities.add(best_f)
+        
+    for u in instance.customers:
+        closest, second = _find_closest_two(u, state.open_facilities, instance.service_costs)
+        state.closest_facility[u] = closest
+        state.second_closest_facility[u] = second
+        
+    state.total_cost = _compute_total_cost(instance, state)
+    _compute_auxiliary_data(instance, state)
+    
+    if verbose:
+        print(f"Uniform initial open: {len(state.open_facilities)}, cost: {state.total_cost:,.2f}")
+    return state
+
 def construct_alpha_grasp_solution(
     instance: UFLPInstance,
     alpha: float = 0.2,
