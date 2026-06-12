@@ -41,6 +41,6 @@ This document summarizes the results of comparing **LP-Biased Hybrid GRASP** vs.
 | **Best Final Cost** | 932,615.75 | 932,615.75 | Both found global optimal (932,615.75) |
 | **Average Final Cost** | 932,615.75 | 932,615.75 | Both always converge to optimum |
 | **Average Local Search Iters** | 0.15 (range: 0-1) | 4.10 (range: 2-6) | LP-biased needs 96.3% fewer iterations |
-| **Local Search Move Breakdown** | Inserts: 0.00<br/>Deletes: 0.15<br/>Swaps: 0.00 | Inserts: 0.55<br/>Deletes: 1.05<br/>Swaps: 2.50 | LP-biased avoids moves due to near-optimal starts |
-| **Average Solve Time** | 0.83 ms | 3.54 ms | LP-biased is 76.5% faster |
+| **Runs Requiring Move Type** | Inserts: 0.0%<br/>Deletes: 15.0%<br/>Swaps: 0.0% | Inserts: 35.0%<br/>Deletes: 55.0%<br/>Swaps: 95.0% | LP-biased avoids moves in most runs |
+| **Average Solve Time** | 0.84 ms | 3.61 ms | LP-biased is 76.6% faster |
 | **Optimal Solutions Found** | **20 / 20** | 20 / 20 | Both hit global optimum 100% of the time |

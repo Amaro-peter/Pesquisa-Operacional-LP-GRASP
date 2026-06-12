@@ -271,16 +271,16 @@ def main():
     lp_stats = compute_stats(lp_biased_results)
     uni_stats = compute_stats(uniform_results)
     
-    # Calculate average move types
-    mean_moves_lp = {
-        'insert': sum(r['moves']['insert'] for r in lp_biased_results) / n_seeds,
-        'delete': sum(r['moves']['delete'] for r in lp_biased_results) / n_seeds,
-        'swap': sum(r['moves']['swap'] for r in lp_biased_results) / n_seeds
+    # Calculate percentage of runs requiring moves
+    pct_moves_lp = {
+        'insert': (sum(1 for r in lp_biased_results if r['moves']['insert'] > 0) / n_seeds) * 100,
+        'delete': (sum(1 for r in lp_biased_results if r['moves']['delete'] > 0) / n_seeds) * 100,
+        'swap': (sum(1 for r in lp_biased_results if r['moves']['swap'] > 0) / n_seeds) * 100
     }
-    mean_moves_uni = {
-        'insert': sum(r['moves']['insert'] for r in uniform_results) / n_seeds,
-        'delete': sum(r['moves']['delete'] for r in uniform_results) / n_seeds,
-        'swap': sum(r['moves']['swap'] for r in uniform_results) / n_seeds
+    pct_moves_uni = {
+        'insert': (sum(1 for r in uniform_results if r['moves']['insert'] > 0) / n_seeds) * 100,
+        'delete': (sum(1 for r in uniform_results if r['moves']['delete'] > 0) / n_seeds) * 100,
+        'swap': (sum(1 for r in uniform_results if r['moves']['swap'] > 0) / n_seeds) * 100
     }
     
     # 3. Save Results Table to MD file
@@ -316,9 +316,9 @@ def main():
         f.write(f"| **Average Local Search Iters** | {lp_stats['iter_mean']:.2f} (range: {lp_stats['iter_min']}-{lp_stats['iter_max']}) | "
                 f"{uni_stats['iter_mean']:.2f} (range: {uni_stats['iter_min']}-{uni_stats['iter_max']}) | "
                 f"LP-biased needs {((uni_stats['iter_mean'] - lp_stats['iter_mean'])/uni_stats['iter_mean']*100):.1f}% fewer iterations |\n")
-        f.write(f"| **Local Search Move Breakdown** | Inserts: {mean_moves_lp['insert']:.2f}<br/>Deletes: {mean_moves_lp['delete']:.2f}<br/>Swaps: {mean_moves_lp['swap']:.2f} | "
-                f"Inserts: {mean_moves_uni['insert']:.2f}<br/>Deletes: {mean_moves_uni['delete']:.2f}<br/>Swaps: {mean_moves_uni['swap']:.2f} | "
-                f"LP-biased avoids moves due to near-optimal starts |\n")
+        f.write(f"| **Runs Requiring Move Type** | Inserts: {pct_moves_lp['insert']:.1f}%<br/>Deletes: {pct_moves_lp['delete']:.1f}%<br/>Swaps: {pct_moves_lp['swap']:.1f}% | "
+                f"Inserts: {pct_moves_uni['insert']:.1f}%<br/>Deletes: {pct_moves_uni['delete']:.1f}%<br/>Swaps: {pct_moves_uni['swap']:.1f}% | "
+                f"LP-biased avoids moves in most runs |\n")
         f.write(f"| **Average Solve Time** | {lp_stats['time_mean']*1000:.2f} ms | {uni_stats['time_mean']*1000:.2f} ms | LP-biased is {((uni_stats['time_mean'] - lp_stats['time_mean'])/uni_stats['time_mean']*100):.1f}% faster |\n")
         f.write(f"| **Optimal Solutions Found** | **{lp_stats['opt_count']} / {n_seeds}** | {uni_stats['opt_count']} / {n_seeds} | Both hit global optimum 100% of the time |\n")
 
@@ -340,21 +340,29 @@ def main():
     
     fig, axs = plt.subplots(2, 2, figsize=(14, 11), facecolor='white')
     
-    # 4.1. Plot 1: Initial Cost Boxplot
+    # 4.1. Plot 1: Initial Cost Boxplot with Jittered Scatter
     ax1 = axs[0, 0]
     ax1.set_facecolor(bg_color)
     init_data = [
         [r['init_cost'] for r in lp_biased_results],
         [r['init_cost'] for r in uniform_results]
     ]
-    bp1 = ax1.boxplot(init_data, patch_artist=True, widths=0.5)
+    # Draw boxplot without outliers (we overlay them all anyway)
+    bp1 = ax1.boxplot(init_data, patch_artist=True, widths=0.5, showfliers=False)
     ax1.set_xticks([1, 2])
     ax1.set_xticklabels(['LP-Biased Init', 'Uniform Init'])
     
-    bp1['boxes'][0].set(facecolor=lp_color, alpha=0.8, edgecolor='#3f51b5')
-    bp1['boxes'][1].set(facecolor=uni_color, alpha=0.8, edgecolor='#e64a19')
+    bp1['boxes'][0].set(facecolor=lp_color, alpha=0.5, edgecolor='#3f51b5')
+    bp1['boxes'][1].set(facecolor=uni_color, alpha=0.5, edgecolor='#e64a19')
     for median in bp1['medians']:
         median.set(color='white', linewidth=2)
+        
+    # Overlay jittered points
+    for i, data_series in enumerate(init_data):
+        x_center = i + 1
+        jitter = [random.uniform(-0.08, 0.08) for _ in data_series]
+        ax1.scatter([x_center + jit for jit in jitter], data_series, 
+                   color='#2c3e50', alpha=0.6, edgecolor='none', s=35, zorder=3)
         
     ax1.set_title("Initial Solution Quality (Lower is Better)", fontsize=13, fontweight='bold', pad=15)
     ax1.set_ylabel("Total Cost (Setup + Service)", fontsize=11)
@@ -363,43 +371,58 @@ def main():
     ax1.spines['top'].set_visible(False)
     ax1.spines['right'].set_visible(False)
     
-    # 4.2. Plot 2: Initial Optimality Gap (%) Boxplot (NEW)
+    # 4.2. Plot 2: Initial Optimality Gap (%) Boxplot with Jittered Scatter
     ax2 = axs[0, 1]
     ax2.set_facecolor(bg_color)
     init_gap_data = [
         [r['init_gap'] for r in lp_biased_results],
         [r['init_gap'] for r in uniform_results]
     ]
-    bp2 = ax2.boxplot(init_gap_data, patch_artist=True, widths=0.5)
+    bp2 = ax2.boxplot(init_gap_data, patch_artist=True, widths=0.5, showfliers=False)
     ax2.set_xticks([1, 2])
     ax2.set_xticklabels(['LP-Biased Init Gap', 'Uniform Init Gap'])
     
-    bp2['boxes'][0].set(facecolor=lp_color, alpha=0.8, edgecolor='#3f51b5')
-    bp2['boxes'][1].set(facecolor=uni_color, alpha=0.8, edgecolor='#e64a19')
+    bp2['boxes'][0].set(facecolor=lp_color, alpha=0.5, edgecolor='#3f51b5')
+    bp2['boxes'][1].set(facecolor=uni_color, alpha=0.5, edgecolor='#e64a19')
     for median in bp2['medians']:
         median.set(color='white', linewidth=2)
         
+    # Overlay jittered points
+    for i, data_series in enumerate(init_gap_data):
+        x_center = i + 1
+        jitter = [random.uniform(-0.08, 0.08) for _ in data_series]
+        ax2.scatter([x_center + jit for jit in jitter], data_series, 
+                   color='#2c3e50', alpha=0.6, edgecolor='none', s=35, zorder=3)
+        
     ax2.set_title("Initial Optimality Gap (%) to LP Bound", fontsize=13, fontweight='bold', pad=15)
     ax2.set_ylabel("Optimality Gap (%)", fontsize=11)
+    ax2.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, loc: f"{x:.1f}%"))
     ax2.grid(True, linestyle='--', alpha=0.5, color='#ccc')
     ax2.spines['top'].set_visible(False)
     ax2.spines['right'].set_visible(False)
     
-    # 4.3. Plot 3: Local Search Iterations to Converge
+    # 4.3. Plot 3: Local Search Iterations to Converge with Jittered Scatter
     ax3 = axs[1, 0]
     ax3.set_facecolor(bg_color)
     iter_data = [
         [r['iters'] for r in lp_biased_results],
         [r['iters'] for r in uniform_results]
     ]
-    bp3 = ax3.boxplot(iter_data, patch_artist=True, widths=0.5)
+    bp3 = ax3.boxplot(iter_data, patch_artist=True, widths=0.5, showfliers=False)
     ax3.set_xticks([1, 2])
     ax3.set_xticklabels(['LP-Biased LS', 'Uniform LS'])
     
-    bp3['boxes'][0].set(facecolor=lp_color, alpha=0.8, edgecolor='#3f51b5')
-    bp3['boxes'][1].set(facecolor=uni_color, alpha=0.8, edgecolor='#e64a19')
+    bp3['boxes'][0].set(facecolor=lp_color, alpha=0.5, edgecolor='#3f51b5')
+    bp3['boxes'][1].set(facecolor=uni_color, alpha=0.5, edgecolor='#e64a19')
     for median in bp3['medians']:
         median.set(color='white', linewidth=2)
+        
+    # Overlay jittered points
+    for i, data_series in enumerate(iter_data):
+        x_center = i + 1
+        jitter = [random.uniform(-0.08, 0.08) for _ in data_series]
+        ax3.scatter([x_center + jit for jit in jitter], data_series, 
+                   color='#2c3e50', alpha=0.6, edgecolor='none', s=35, zorder=3)
         
     ax3.set_title("Local Search Convergence Efficiency", fontsize=13, fontweight='bold', pad=15)
     ax3.set_ylabel("Local Search Iterations", fontsize=11)
@@ -407,47 +430,48 @@ def main():
     ax3.spines['top'].set_visible(False)
     ax3.spines['right'].set_visible(False)
     
-    # 4.4. Plot 4: Grouped Bar Chart of Move Types (NEW)
+    # 4.4. Plot 4: Grouped Bar Chart of Move Types (%)
     ax4 = axs[1, 1]
     ax4.set_facecolor(bg_color)
     
     categories = ['Insert', 'Delete', 'Swap']
-    lp_means = [mean_moves_lp['insert'], mean_moves_lp['delete'], mean_moves_lp['swap']]
-    uni_means = [mean_moves_uni['insert'], mean_moves_uni['delete'], mean_moves_uni['swap']]
+    lp_pcts = [pct_moves_lp['insert'], pct_moves_lp['delete'], pct_moves_lp['swap']]
+    uni_pcts = [pct_moves_uni['insert'], pct_moves_uni['delete'], pct_moves_uni['swap']]
     
     import numpy as np
     x_pos = np.arange(len(categories))
     width = 0.35
     
-    rects1 = ax4.bar(x_pos - width/2, lp_means, width, label='LP-Biased', color=lp_color, alpha=0.8, edgecolor='#3f51b5')
-    rects2 = ax4.bar(x_pos + width/2, uni_means, width, label='Uniform', color=uni_color, alpha=0.8, edgecolor='#e64a19')
+    rects1 = ax4.bar(x_pos - width/2, lp_pcts, width, label='LP-Biased', color=lp_color, alpha=0.8, edgecolor='#3f51b5')
+    rects2 = ax4.bar(x_pos + width/2, uni_pcts, width, label='Uniform', color=uni_color, alpha=0.8, edgecolor='#e64a19')
     
-    ax4.set_title("Average Local Search Moves Breakdown", fontsize=13, fontweight='bold', pad=15)
+    ax4.set_title("Local Search Moves Requirement (%)", fontsize=13, fontweight='bold', pad=15)
     ax4.set_xticks(x_pos)
     ax4.set_xticklabels(categories)
-    ax4.set_ylabel("Average Move Count", fontsize=11)
+    ax4.set_ylabel("Runs Requiring Move Type (%)", fontsize=11)
+    ax4.set_ylim(0, 115)
+    ax4.set_yticks([0, 20, 40, 60, 80, 100])
+    ax4.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, loc: f"{int(x)}%"))
     ax4.grid(True, linestyle='--', alpha=0.5, color='#ccc', axis='y')
     ax4.legend(loc='upper right', frameon=True, facecolor='white', edgecolor='none')
     ax4.spines['top'].set_visible(False)
     ax4.spines['right'].set_visible(False)
     
-    # Add value labels on top of the bars
+    # Add value labels on top of the bars as percentages
     for rect in rects1:
         height = rect.get_height()
-        if height > 0.01:
-            ax4.annotate(f'{height:.2f}',
-                        xy=(rect.get_x() + rect.get_width() / 2, height),
-                        xytext=(0, 3),
-                        textcoords="offset points",
-                        ha='center', va='bottom', fontsize=9, fontweight='bold', color='#2c3e50')
+        ax4.annotate(f'{height:.1f}%',
+                    xy=(rect.get_x() + rect.get_width() / 2, height),
+                    xytext=(0, 3),
+                    textcoords="offset points",
+                    ha='center', va='bottom', fontsize=9, fontweight='bold', color='#2c3e50')
     for rect in rects2:
         height = rect.get_height()
-        if height > 0.01:
-            ax4.annotate(f'{height:.2f}',
-                        xy=(rect.get_x() + rect.get_width() / 2, height),
-                        xytext=(0, 3),
-                        textcoords="offset points",
-                        ha='center', va='bottom', fontsize=9, fontweight='bold', color='#2c3e50')
+        ax4.annotate(f'{height:.1f}%',
+                    xy=(rect.get_x() + rect.get_width() / 2, height),
+                    xytext=(0, 3),
+                    textcoords="offset points",
+                    ha='center', va='bottom', fontsize=9, fontweight='bold', color='#2c3e50')
     
     plt.suptitle("UFLP Hybrid LP-GRASP vs. Uniform Random GRASP Performance\nBenchmark Instance: cap71.txt (20 Runs Comparison)", 
                  fontsize=16, fontweight='bold', y=0.98)

@@ -30,15 +30,16 @@ The experimental data is saved to [cap71_results.md](file:///e:/Pesquisa_Operaci
 | **Best Final Cost** | 932,615.75 (Optimal) | 932,615.75 (Optimal) | Both methods find the global optimum under local search |
 | **Average Final Cost** | 932,615.75 | 932,615.75 | Both converge to the exact same optimal cost |
 | **Average LS Iterations** | **0.15** (range: 0-1) | **4.10** (range: 2-6) | LP-biased converges **96.3% faster** |
-| **Local Search Move Breakdown** | Inserts: 0.00<br/>Deletes: 0.15<br/>Swaps: 0.00 | Inserts: 0.55<br/>Deletes: 1.05<br/>Swaps: 2.50 | LP-biased avoids local search moves due to near-optimal starts |
-| **Average Solve Time** | **0.83 ms** | **3.54 ms** | LP-biased is **4.2x faster** in construction + local search |
+| **Runs Requiring Move Type** | Inserts: 0.0%<br/>Deletes: 15.0%<br/>Swaps: 0.0% | Inserts: 35.0%<br/>Deletes: 55.0%<br/>Swaps: 95.0% | LP-biased avoids local search moves in most runs |
+| **Average Solve Time** | **0.84 ms** | **3.61 ms** | LP-biased is **4.2x faster** in construction + local search |
 | **Optimal Solutions Found** | **20 / 20** (100%) | **20 / 20** (100%) | Both solvers achieve 100% convergence to the optimal solution |
 
 ### Key Findings
 
 1. **Near-Perfect Initialization:** By using the Simplex relaxation solutions to guide the constructive heuristic, the LP-biased method starts with a cost that is already within **0.07%** of the global optimum on average. In 17 out of 20 runs, the initial solution constructed was *already* the exact global optimum, requiring **0 local search iterations**.
-2. **Move Type Breakdown:** The uniform random method requires significantly more work during local search, performing an average of 0.55 insertions, 1.05 deletions, and 2.50 swaps per run to clean up its poor starting configurations. The LP-biased method bypasses these moves entirely, performing only 0.15 deletions (and 0 insertions/swaps) on average across all 20 runs.
-3. **Computational Efficiency:** Because the LP-biased initial solutions are positioned extremely close to the global optimum, the local search requires minimal work. This results in a massive **96.3% reduction in local search iterations** and a **4.2x speedup in solve time** compared to the uniform baseline.
+2. **Scatter Overlay Visualizes the Variance:** Because the LP-biased initial states are so consistent, the box plots for LP-Biased have zero height (collapsing into a line at the optimal cost). By overlaying all 20 runs as individual dots, we can now clearly see that 17 dots are stacked exactly on the optimal line, while only 3 dots represent non-optimal starts, explaining the "zero variance" phenomenon visually.
+3. **Move Type Breakdown:** The uniform random method requires significant work during local search, requiring swaps in 95% of runs, deletions in 55% of runs, and insertions in 35% of runs to reach optimality. In contrast, the LP-biased method only requires deletions in 15% of runs and never requires insertions or swaps.
+4. **Computational Efficiency:** Because the LP-biased initial solutions are positioned extremely close to the global optimum, the local search requires minimal work. This results in a massive **96.3% reduction in local search iterations** and a **4.2x speedup in solve time** compared to the uniform baseline.
 
 ---
 
@@ -48,10 +49,10 @@ A 4-panel analysis plot comparing both methods is saved as [cap71_analysis.png](
 
 ![Performance Comparison Charts](cap71_analysis.png)
 
-* **Top-Left (Initial Cost):** Shows that LP-biased initialization generates vastly superior starting configurations with low variance.
-* **Top-Right (Initial Optimality Gap):** Highlights the massive difference in starting optimality gap (LP-biased at 0.07% vs. Uniform at 10.63%).
-* **Bottom-Left (LS Iterations):** Displays the reduction in local search iterations achieved through LP bias.
-* **Bottom-Right (LS Moves Breakdown):** Illustrates the average number of insert, delete, and swap moves, emphasizing why the uniform method is slower.
+* **Top-Left (Initial Cost):** Shows that LP-biased initialization generates vastly superior starting configurations with low variance, with individual runs represented by jittered dots.
+* **Top-Right (Initial Optimality Gap):** Highlights the starting optimality gap (LP-biased at 0.07% vs. Uniform at 10.63%).
+* **Bottom-Left (LS Iterations):** Displays the local search iterations, showing that LP-biased starts directly at the optimal solution (0 iterations) in most runs.
+* **Bottom-Right (LS Moves Requirement):** Illustrates the percentage of runs requiring insert, delete, and swap moves.
 
 ---
 
