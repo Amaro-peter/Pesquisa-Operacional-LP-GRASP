@@ -349,8 +349,12 @@ def _compute_swap_profit(
 
         if phi1[u] == f_r:
             # This customer's closest is being removed.
-            # New closest is min(d(u, f_i), d(u, phi2[u]))
-            new_cost = min(d[u][f_i], d[u][phi2[u]])
+            # If there is only 1 open facility, the only remaining open facility is f_i.
+            # Otherwise, the new closest is either f_i or the second closest facility.
+            if len(state.open_facilities) > 1:
+                new_cost = min(d[u][f_i], d[u][phi2[u]])
+            else:
+                new_cost = d[u][f_i]
         else:
             # Closest survives. But f_i might be even closer.
             new_cost = min(old_cost, d[u][f_i])
