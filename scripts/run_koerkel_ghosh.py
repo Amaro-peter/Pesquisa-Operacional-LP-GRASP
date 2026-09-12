@@ -44,7 +44,7 @@ from dataclasses import asdict
 from datetime import datetime, timezone
 from typing import Dict, List
 
-from download_and_run_real_world import (
+from scripts.download_and_run_real_world import (
     ArmResult,
     _cmp,
     _environment,
@@ -59,13 +59,13 @@ from download_and_run_real_world import (
     run_lp_rounding,
     run_lp_rounding_plus_search,
 )
-from koerkel_ghosh import (
+from scripts.koerkel_ghosh import (
     ALLOCATION_COST_RANGE,
     FIXED_COST_RANGES,
     generate_koerkel_ghosh_instance,
     instance_name,
 )
-from run_experiments import get_lp_bound_and_probs
+from scripts.run_experiments import get_lp_bound_and_probs
 
 
 def run_one_instance(size: int, klass: str, symmetric: bool, index: int,

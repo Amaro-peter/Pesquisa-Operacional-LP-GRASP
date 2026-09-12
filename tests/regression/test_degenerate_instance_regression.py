@@ -41,7 +41,7 @@ import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
-from uflp_solver import UFLPInstance, solve_uflp
+from scripts.uflp_solver import UFLPInstance, solve_uflp
 
 
 def test_customer_free_instance_is_rejected_instead_of_mis_solved():
@@ -73,7 +73,7 @@ def test_facility_free_instance_raises_an_attributable_error():
     with pytest.raises(ValueError, match="at least one facility"):
         solve_uflp(instance, verbose=False)
 
-    from uflp_solver import validate_instance
+    from scripts.uflp_solver import validate_instance
 
     with pytest.raises(ValueError) as excinfo:
         validate_instance(instance)
@@ -124,7 +124,7 @@ def test_counterweight_minimal_valid_instance_still_solves():
         setup_costs={0: 42.0},
         service_costs={0: {0: 8.0}},
     )
-    from uflp_solver import validate_instance
+    from scripts.uflp_solver import validate_instance
 
     validate_instance(instance)  # must not raise
 
@@ -145,7 +145,7 @@ def test_counterweight_zero_valued_costs_are_not_mistaken_for_missing():
         setup_costs={0: 0.0, 1: 0.0},
         service_costs={0: {0: 0.0, 1: 0.0}, 1: {0: 0.0, 1: 0.0}},
     )
-    from uflp_solver import validate_instance
+    from scripts.uflp_solver import validate_instance
 
     validate_instance(instance)  # must not raise
 

@@ -7,11 +7,11 @@ filterwarnings = [
 ]
 
 [tool.coverage.run]
-source = ["."]
+source = ["scripts"]
 omit = [
     "tests/*",
-    "run_experiments.py",
-    "run_scaling_benchmark.py",
+    "scripts/run_experiments.py",
+    "scripts/run_scaling_benchmark.py",
 ]
 
 [tool.coverage.report]
@@ -24,9 +24,20 @@ fail_under = 85
 show_missing = true
 
 [tool.mutmut]
-source_paths = ["uflp_solver.py"]
+source_paths = ["scripts/uflp_solver.py"]
 # The mutation gauntlet runs against the unit suite only. mutmut executes from a
 # copied `mutants/` tree that does not contain `data/`, so the repo-layout
 # regression tests cannot run there -- and per CLAUDE.md's "Fast-to-Slow" rule
 # mutation testing targets unit-level logic anyway.
 pytest_add_cli_args_test_selection = ["tests/unit"]
+# mutmut copies only the file it mutates into `mutants/`. The unit suite also
+# imports the sibling modules, so they must be copied alongside it or the tree
+# cannot even be collected.
+also_copy = [
+    "scripts/__init__.py",
+    "scripts/run_experiments.py",
+    "scripts/download_and_run_real_world.py",
+    "scripts/koerkel_ghosh.py",
+    "scripts/run_koerkel_ghosh.py",
+    "scripts/run_scaling_benchmark.py",
+]

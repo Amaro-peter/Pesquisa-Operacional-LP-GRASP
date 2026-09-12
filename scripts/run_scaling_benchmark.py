@@ -8,13 +8,17 @@ import concurrent.futures
 from typing import List, Tuple, Dict
 
 # Import modular components
-from uflp_solver import generate_random_instance, UFLPInstance
-from run_experiments import (
+from scripts.uflp_solver import generate_random_instance, UFLPInstance
+from scripts.run_experiments import (
     get_lp_bound_and_probs,
     construct_lp_biased_solution,
     construct_alpha_grasp_solution,
     run_local_search_iter_count
 )
+
+# All generated artifacts live in output/, alongside every other report.
+OUTPUT_DIR = "output"
+
 
 def evaluate_seed(seed_instance_tuple):
     # lp_probs MUST travel inside the task tuple. Relying on a module-level
@@ -57,6 +61,80 @@ def evaluate_seed(seed_instance_tuple):
         'alpha_final_gap': alpha_final_gap,
         'lp_only_time': lp_solve_time
     }
+
+
+# Gaps are measured against the LP bound, so a negative gap is impossible: it
+# would mean a feasible solution beat a valid lower bound. Values a hair below
+# zero are floating-point noise from `(cost - bound) / bound` when the arm
+# attains the bound exactly, and printing them as "-0.0000%" reads like a bug.
+# Anything larger than the tolerance is NOT hidden -- a genuinely negative gap
+# is a real defect and must stay visible.
+GAP_NOISE_TOLERANCE = 1e-9
+
+
+def fmt_gap(value, places=4):
+    """Format a percentage gap, absorbing sub-tolerance negative zero."""
+    # Compare on magnitude: `-0.0 < 0.0` is False (they compare equal), so a
+    # strict range check lets negative zero straight through to "-0.0000".
+    if abs(value) < GAP_NOISE_TOLERANCE:
+        value = 0.0
+    return f"{value:.{places}f}"
+
+
+def describe_scaling(rows):
+    """
+    Describe the measured scaling behaviour, computed from `rows`.
+
+    Every figure and every comparative word here is derived from the
+    measurements. The previous version of this section was hardcoded prose that
+    claimed LP-biased initial gaps were "under 1%" and alpha-GRASP's were "over
+    30% to 140%" -- neither of which matched the table printed directly above
+    it. That is the same defect that produced `fix_markdown.py`, and a report
+    that can contradict its own table is not a report.
+    """
+    def rng(key):
+        vals = [r[key] for r in rows]
+        return min(vals), max(vals)
+
+    lp_init_lo, lp_init_hi = rng("lp_init_gap")
+    al_init_lo, al_init_hi = rng("alpha_init_gap")
+    lp_fin_lo, lp_fin_hi = rng("lp_final_gap")
+    al_fin_lo, al_fin_hi = rng("alpha_final_gap")
+
+    biggest = max(rows, key=lambda r: r["vars"])
+    lp_t, al_t = biggest["lp_time"], biggest["alpha_time"]
+    faster = "faster" if lp_t < al_t else "slower"
+    factor = (al_t / lp_t) if lp_t > 0 else float("inf")
+    lp_share = (biggest["lp_only_time"] / lp_t * 100) if lp_t > 0 else 0.0
+
+    lp_wins = sum(1 for r in rows
+                  if r["lp_final_gap"] < r["alpha_final_gap"] - 1e-9)
+    al_wins = sum(1 for r in rows
+                  if r["alpha_final_gap"] < r["lp_final_gap"] - 1e-9)
+    ties = len(rows) - lp_wins - al_wins
+
+    out = []
+    out.append(
+        f"1. **Initial Quality Gap**: across the {len(rows)} sizes tested, the LP-biased "
+        f"construction starts between **{lp_init_lo:.2f}%** and **{lp_init_hi:.2f}%** above the LP "
+        f"bound; alpha-GRASP starts between **{al_init_lo:.2f}%** and **{al_init_hi:.2f}%**."
+    )
+    out.append(
+        f"2. **Convergence and Final Gaps**: after local search the LP-biased arm lands between "
+        f"{fmt_gap(lp_fin_lo)}% and {fmt_gap(lp_fin_hi)}%, and alpha-GRASP between "
+        f"{fmt_gap(al_fin_lo)}% and {fmt_gap(al_fin_hi)}%. On final gap the LP-biased arm "
+        f"was better on {lp_wins} "
+        f"{'size' if lp_wins == 1 else 'sizes'}, worse on {al_wins}, and tied on {ties}."
+    )
+    out.append(
+        f"3. **Solve Time Efficiency**: at the largest size ({biggest['size']}, "
+        f"{biggest['vars']:,} variables) the LP-biased arm is **{factor:.2f}x {faster}** "
+        f"({lp_t:.3f}s against {al_t:.3f}s), with the LP solve itself accounting for "
+        f"{lp_share:.0f}% of its time. Gaps are measured against the LP bound, which is a lower "
+        f"bound and not a proven optimum, so a 0.0000% entry means the arm attained the bound."
+    )
+    return out
+
 
 def main():
     print("=" * 70)
@@ -159,8 +237,12 @@ def main():
             'lp_only_time': lp_solve_time,
         })
         
-    print("\nWriting tables of results to scaling_results.md...")
-    with open("scaling_results.md", "w", encoding="utf-8") as f:
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    md_path = os.path.join(OUTPUT_DIR, "scaling_results.md")
+    png_path = os.path.join(OUTPUT_DIR, "scaling_analysis.png")
+
+    print(f"\nWriting tables of results to {md_path}...")
+    with open(md_path, "w", encoding="utf-8") as f:
         f.write("# Large-Scale Scaling Benchmarks (UFLP)\n\n")
         f.write("This document summarizes the performance scaling of **LP-Biased Hybrid GRASP** vs. **alpha-GRASP** ")
         f.write("as instance size increases. Each size is evaluated over 5 independent seeds in parallel.\n\n")
@@ -171,13 +253,12 @@ def main():
         f.write("| Size (F x C) | Variables | LP-Biased Solve Time (s) | LP-Biased Init / Final Gap (%) | alpha-GRASP Solve Time (s) | alpha-GRASP Init / Final Gap (%) | LP Solve Portion (s) |\n")
         f.write("|---|---|---|---|---|---|---|\n")
         for r in detailed_rows:
-            f.write(f"| {r['size']} | {r['vars']:,} | {r['lp_time']:.3f}s (± {r['lp_time_std']:.3f}) | {r['lp_init_gap']:.2f}% / {r['lp_final_gap']:.4f}% | "
-                    f"{r['alpha_time']:.3f}s (± {r['alpha_time_std']:.3f}) | {r['alpha_init_gap']:.2f}% / {r['alpha_final_gap']:.4f}% | {r['lp_only_time']:.3f}s |\n")
+            f.write(f"| {r['size']} | {r['vars']:,} | {r['lp_time']:.3f}s (± {r['lp_time_std']:.3f}) | {fmt_gap(r['lp_init_gap'], 2)}% / {fmt_gap(r['lp_final_gap'])}% | "
+                    f"{r['alpha_time']:.3f}s (± {r['alpha_time_std']:.3f}) | {fmt_gap(r['alpha_init_gap'], 2)}% / {fmt_gap(r['alpha_final_gap'])}% | {r['lp_only_time']:.3f}s |\n")
         
         f.write("\n## Discussion of Scaling Behavior\n\n")
-        f.write("1. **Initial Quality Gap**: The LP-biased constructive solver starts with an initial gap of **under 1%** across all sizes, showing that exact LP relaxation guidance targets the optimal facility locations immediately. In contrast, alpha-GRASP starts with an initial gap of **over 30% to 140%**, scaling up with instance complexity.\n")
-        f.write("2. **Convergence and Final Gaps**: Under local search, both solvers converge to near-optimal solutions (mostly 0.00% gap). However, the alpha-GRASP solver takes significantly more local search iterations and time to repair its poor starting configurations, while the LP-biased method converges almost instantly.\n")
-        f.write("3. **Solve Time Efficiency**: While the LP-Biased solver incurs a Simplex initialization time, its local search is nearly instantaneous. The alpha-GRASP solver's search time grows rapidly due to the large number of repair moves (insertions/deletions/swaps), making the LP-biased method faster at scale.\n")
+        for line in describe_scaling(detailed_rows):
+            f.write(line + "\n")
 
     print("\nGenerating scaling curves and saving to scaling_analysis.png...")
     plt.style.use('seaborn-v0_8-whitegrid')
@@ -205,11 +286,11 @@ def main():
     ax.legend()
     
     plt.tight_layout()
-    plt.savefig("scaling_analysis.png", dpi=150)
-    
+    plt.savefig(png_path, dpi=150)
+
     print("\nScaling benchmark completed successfully!")
-    print("Results table written to: scaling_results.md")
-    print("Visualization saved to: scaling_analysis.png")
+    print(f"Results table written to: {md_path}")
+    print(f"Visualization saved to: {png_path}")
 
 if __name__ == '__main__':
     main()

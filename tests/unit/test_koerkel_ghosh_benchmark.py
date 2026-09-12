@@ -14,7 +14,7 @@ import sys
 
 import pytest
 
-from run_koerkel_ghosh import _excess, main, render_report, run_one_instance
+from scripts.run_koerkel_ghosh import _excess, main, render_report, run_one_instance
 
 ENV = {"python": "3.14.6", "numpy": "2.5.3", "scipy": "1.18.1",
        "scikit_learn": "1.9.1", "platform": "test", "cpu_count": "12"}

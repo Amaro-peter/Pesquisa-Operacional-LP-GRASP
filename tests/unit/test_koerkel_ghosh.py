@@ -13,14 +13,14 @@ import random
 
 import pytest
 
-from koerkel_ghosh import (
+from scripts.koerkel_ghosh import (
     ALLOCATION_COST_RANGE,
     FIXED_COST_RANGES,
     LIBRARY_SIZES,
     generate_koerkel_ghosh_instance,
     instance_name,
 )
-from uflp_solver import validate_instance
+from scripts.uflp_solver import validate_instance
 
 
 class TestSpecificationCompliance:
@@ -151,7 +151,7 @@ class TestTheFamilyIsActuallyHard:
         seed 1 does). So this averages over several instances at a size where
         the effect is established, and states the family-level property.
         """
-        from run_experiments import get_lp_bound_and_probs
+        from scripts.run_experiments import get_lp_bound_and_probs
 
         shares = []
         for seed in (1, 2, 3):
@@ -179,7 +179,7 @@ class TestTheFamilyIsActuallyHard:
         thresholding at y >= 0.5 selects (almost) nothing, so rounding alone
         cannot produce a usable solution.
         """
-        from run_experiments import get_lp_bound_and_probs
+        from scripts.run_experiments import get_lp_bound_and_probs
 
         instance = generate_koerkel_ghosh_instance(size=125, klass="c", symmetric=True, seed=1)
         _bound, probs = get_lp_bound_and_probs(instance)

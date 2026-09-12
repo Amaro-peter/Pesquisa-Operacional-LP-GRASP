@@ -52,7 +52,7 @@ from __future__ import annotations
 import random
 from typing import Dict, List, Tuple
 
-from uflp_solver import UFLPInstance
+from scripts.uflp_solver import UFLPInstance
 
 # Fixed-cost range per class, per the specification quoted above.
 FIXED_COST_RANGES: Dict[str, Tuple[int, int]] = {

@@ -18,7 +18,7 @@ import sys
 
 import pytest
 
-from download_and_run_real_world import (
+from scripts.download_and_run_real_world import (
     ArmResult,
     CONSTRUCTION_EPS,
     LPProfile,
@@ -35,8 +35,8 @@ from download_and_run_real_world import (
     run_lp_biased,
     run_lp_rounding,
 )
-from run_experiments import get_lp_bound_and_probs
-from uflp_solver import UFLPInstance
+from scripts.run_experiments import get_lp_bound_and_probs
+from scripts.uflp_solver import UFLPInstance
 
 
 @pytest.fixture(scope="module")
@@ -291,7 +291,7 @@ class TestMultiSeedReporting:
 
     @staticmethod
     def _render_with_seeds(seeds):
-        from download_and_run_real_world import render_report
+        from scripts.download_and_run_real_world import render_report
 
         lp = LPProfile(
             bound=100_000.0, solve_seconds=57.0, n_facilities=2000,
@@ -365,7 +365,7 @@ class TestRobustnessNarrative:
 
     @staticmethod
     def _render(biased_finals, alpha_finals):
-        from download_and_run_real_world import render_report
+        from scripts.download_and_run_real_world import render_report
 
         seeds = [42, 7, 2024][: len(biased_finals)]
         lp = LPProfile(
@@ -452,7 +452,7 @@ class TestRerenderFromJson:
         re-run. Render once, re-render from the JSON, and require byte
         equality: the measurements must survive the round trip exactly.
         """
-        from download_and_run_real_world import rerender_from_json
+        from scripts.download_and_run_real_world import rerender_from_json
 
         out = tmp_path / "out"
         monkeypatch.setattr(

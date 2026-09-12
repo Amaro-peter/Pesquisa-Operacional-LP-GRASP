@@ -21,7 +21,7 @@ from unittest.mock import patch
 
 import pytest
 
-from uflp_solver import (
+from scripts.uflp_solver import (
     UFLPInstance,
     construct_solution,
     validate_instance,

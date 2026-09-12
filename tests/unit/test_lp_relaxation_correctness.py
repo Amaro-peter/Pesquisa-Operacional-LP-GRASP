@@ -19,8 +19,8 @@ import math
 
 import pytest
 
-from run_experiments import get_lp_bound_and_probs
-from uflp_solver import UFLPInstance, generate_random_instance, solve_lp_relaxation
+from scripts.run_experiments import get_lp_bound_and_probs
+from scripts.uflp_solver import UFLPInstance, generate_random_instance, solve_lp_relaxation
 
 
 def _brute_force_ip_optimum(instance: UFLPInstance) -> float:
@@ -215,6 +215,6 @@ class TestVerboseReporting:
         instance = UFLPInstance(
             facilities=[0], customers=[0], setup_costs={0: 1.0}, service_costs={0: {0: 1.0}}
         )
-        with patch("uflp_solver.linprog", return_value=MockResult()):
+        with patch("scripts.uflp_solver.linprog", return_value=MockResult()):
             with pytest.raises(RuntimeError, match=r"status=2.*mocked infeasibility"):
                 solve_lp_relaxation(instance, verbose=False)

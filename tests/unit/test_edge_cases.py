@@ -1,13 +1,13 @@
 import pytest
 import math
-from uflp_solver import (
+from scripts.uflp_solver import (
     UFLPInstance,
     SolutionState,
     _compute_total_cost,
     local_search,
     solve_uflp
 )
-from run_experiments import construct_alpha_grasp_solution
+from scripts.run_experiments import construct_alpha_grasp_solution
 
 def test_zero_setup_costs():
     """If setup costs are 0, the optimal solution is to open ALL facilities to minimize service costs."""
@@ -110,7 +110,7 @@ def test_local_search_rejects_micro_profits():
         second_closest_facility={0: 0}
     )
     state.total_cost = _compute_total_cost(inst, state)
-    from uflp_solver import _compute_auxiliary_data
+    from scripts.uflp_solver import _compute_auxiliary_data
     _compute_auxiliary_data(inst, state)
     
     # Running local search. Facility 1 is better by 1e-10, but threshold is 1e-9.

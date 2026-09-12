@@ -58,13 +58,13 @@ from typing import Dict, List, Tuple
 
 import numpy as np
 
-from run_experiments import (
+from scripts.run_experiments import (
     construct_alpha_grasp_solution,
     construct_lp_biased_solution,
     get_lp_bound_and_probs,
     run_local_search_iter_count,
 )
-from uflp_solver import (
+from scripts.uflp_solver import (
     SolutionState,
     UFLPInstance,
     _compute_auxiliary_data,

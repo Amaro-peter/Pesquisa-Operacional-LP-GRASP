@@ -36,8 +36,8 @@ import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
-import run_scaling_benchmark as rsb
-from uflp_solver import generate_random_instance
+import scripts.run_scaling_benchmark as rsb
+from scripts.uflp_solver import generate_random_instance
 
 
 def _worker_reports_lp_init_gap(task):

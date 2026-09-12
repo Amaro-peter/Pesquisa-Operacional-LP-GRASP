@@ -7,7 +7,7 @@ from unittest.mock import patch, MagicMock
 import pytest
 import pulp
 
-from uflp_solver import (
+from scripts.uflp_solver import (
     UFLPInstance,
     SolutionState,
     parse_orlib_instance,
@@ -131,7 +131,7 @@ class TestLPRelaxation:
             message = "mocked infeasibility"
             status = 2
             
-        with patch('uflp_solver.linprog', return_value=MockResult()):
+        with patch('scripts.uflp_solver.linprog', return_value=MockResult()):
             with pytest.raises(RuntimeError, match="LP relaxation did not reach optimality"):
                 solve_lp_relaxation(small_instance, verbose=False)
 

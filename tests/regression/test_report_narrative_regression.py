@@ -43,7 +43,9 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..",
 
 import pathlib
 
-GENERATOR = pathlib.Path(__file__).resolve().parents[2] / "download_and_run_real_world.py"
+GENERATOR = (
+    pathlib.Path(__file__).resolve().parents[2] / "scripts" / "download_and_run_real_world.py"
+)
 
 ENV = {
     "python": "3.14.6",
@@ -56,7 +58,7 @@ ENV = {
 
 
 def _lp(bound=100_000.0, n_fractional=7):
-    from download_and_run_real_world import LPProfile
+    from scripts.download_and_run_real_world import LPProfile
 
     return LPProfile(
         bound=bound,
@@ -72,7 +74,7 @@ def _lp(bound=100_000.0, n_fractional=7):
 
 def _arm(method, seed, init_gap, final_gap, iterations, moves,
          construct=10.0, search=100.0, lp_seconds=0.0, bound=100_000.0):
-    from download_and_run_real_world import ArmResult
+    from scripts.download_and_run_real_world import ArmResult
 
     return ArmResult(
         method=method,
@@ -94,7 +96,7 @@ def _arm(method, seed, init_gap, final_gap, iterations, moves,
 def _render(lp_init_gap, al_init_gap, lp_final_gap, al_final_gap,
             lp_search, al_search, lp_construct, al_construct,
             ap_final_gap=0.55):
-    from download_and_run_real_world import render_report
+    from scripts.download_and_run_real_world import render_report
 
     lp = _lp()
     control = _arm("LP rounding (control)", None, 1.0, 1.0, 0,
@@ -234,7 +236,7 @@ class TestIntegralityNarrative:
         alpha = [_arm("alpha-GRASP baseline (alpha=0.2)", 42, 18.1, 0.34, 36,
                       {"insert": 0, "delete": 9, "swap": 27},
                       construct=106.8, search=292.0)]
-        from download_and_run_real_world import render_report
+        from scripts.download_and_run_real_world import render_report
 
         md = render_report(
             n_fac=2000, n_cust=2000, lp=lp, control=control, rounding_ls=rounding_ls,
@@ -260,7 +262,7 @@ class TestNoBackComputedFigures:
         rounding_ls = _arm("LP rounding + local search (deterministic ablation)", None, 1.0, 0.55, 5,
                            {"insert": 0, "delete": 3, "swap": 2},
                            construct=0.1, search=40.0, lp_seconds=lp.solve_seconds)
-        from download_and_run_real_world import ArmResult, render_report
+        from scripts.download_and_run_real_world import ArmResult, render_report
 
         biased = [ArmResult(
             method="LP-biased hybrid GRASP", seed=42,
@@ -346,7 +348,7 @@ class TestTemplateCarriesNoHardcodedVerdict:
         """
         import inspect
 
-        from download_and_run_real_world import render_report
+        from scripts.download_and_run_real_world import render_report
 
         params = inspect.signature(render_report).parameters
         for required in ("lp", "control", "lp_biased", "alpha", "seeds"):
@@ -403,7 +405,7 @@ class TestAblationVerdictFollowsTheData:
 
     @staticmethod
     def _render_ablation(ap_final_gap, ap_iters, b_final_gaps, ap_final_cost=None):
-        from download_and_run_real_world import ArmResult, LPProfile, render_report
+        from scripts.download_and_run_real_world import ArmResult, LPProfile, render_report
 
         lp = LPProfile(
             bound=100_000.0, solve_seconds=67.0, n_facilities=2000,

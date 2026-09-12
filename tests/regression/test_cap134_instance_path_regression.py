@@ -32,7 +32,7 @@ import pytest
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 sys.path.insert(0, REPO_ROOT)
 
-import run_experiments
+import scripts.run_experiments as run_experiments
 
 
 def test_benchmark_resolves_the_instance_file_that_actually_ships():
@@ -84,3 +84,64 @@ def _main_source() -> str:
     import inspect
 
     return inspect.getsource(run_experiments.main)
+
+
+class TestGeneratedArtifactsLandInOutputDir:
+    """
+    Every generated artifact belongs in `output/`, and the path a script prints
+    must be the path it actually wrote.
+
+    `run_scaling_benchmark` used to write `scaling_results.md` and
+    `scaling_analysis.png` into the repository root while `run_experiments`
+    wrote into `output/`, and `run_experiments` printed "Results written to:
+    cap134.md" while actually writing `output/cap134.md`. Both are the same
+    defect in different directions: a reader cannot tell where an artifact came
+    from, which is the failure mode this whole audit exists to prevent.
+    """
+
+    @staticmethod
+    def _source(module_name):
+        import pathlib
+
+        return (
+            pathlib.Path(__file__).resolve().parents[2] / "scripts" / f"{module_name}.py"
+        ).read_text()
+
+    @pytest.mark.parametrize(
+        "module", ["run_experiments", "run_scaling_benchmark"]
+    )
+    def test_scripts_declare_an_output_dir_and_use_it(self, module):
+        src = self._source(module)
+        assert 'OUTPUT_DIR = "output"' in src, f"{module} has no OUTPUT_DIR constant"
+        assert "os.makedirs(OUTPUT_DIR" in src, f"{module} never creates OUTPUT_DIR"
+
+    @pytest.mark.parametrize(
+        "module,artifacts",
+        [
+            ("run_experiments", ["cap134.md", "cap134.png"]),
+            ("run_scaling_benchmark", ["scaling_results.md", "scaling_analysis.png"]),
+        ],
+    )
+    def test_no_artifact_is_written_to_a_bare_relative_path(self, module, artifacts):
+        """
+        A bare `open("scaling_results.md", "w")` or `savefig("x.png")` writes to
+        the working directory, not to output/. The filename may only appear as
+        an argument to os.path.join.
+        """
+        src = self._source(module)
+        for name in artifacts:
+            bare_write = f'open("{name}"'
+            bare_savefig = f'savefig("{name}"'
+            assert bare_write not in src, f"{module} writes {name} to a bare path"
+            assert bare_savefig not in src, f"{module} saves {name} to a bare path"
+            assert f'"{name}"' in src, f"{module} no longer produces {name} at all"
+
+    def test_counterweight_the_instance_path_is_still_an_input_not_an_output(self):
+        """
+        COUNTERWEIGHT: the OUTPUT_DIR change must not have swept up the *input*
+        instance path. `data/cap134.txt` is read, not written, and must stay
+        outside output/.
+        """
+        src = self._source("run_experiments")
+        assert '"data/cap134.txt"' in src
+        assert 'os.path.join(OUTPUT_DIR, "cap134.txt")' not in src

@@ -46,7 +46,7 @@ pip install -r requirements.txt   # pulp, matplotlib, pytest, pytest-cov, mutmut
 
 # Run test suite & coverage (enforces >= 85% coverage gate)
 pytest
-pytest --cov=. --cov-report=term-missing --cov-report=xml:coverage.xml
+pytest --cov --cov-report=term-missing --cov-report=xml:coverage.xml
 
 # Run mutation testing gauntlet
 mutmut run
@@ -57,23 +57,31 @@ mutmut show <mutant_id>
 sonar-scanner
 
 # Solve a single instance
-python uflp_solver.py                              # random demo instance
-python uflp_solver.py --file cap134.txt            # OR-Library (Beasley) instance
-python uflp_solver.py --n-facilities 25 --n-customers 40 --seed 7
-python uflp_solver.py --quiet                      # suppress verbose phase-by-phase output
+# Entry points live in scripts/ and import each other as `scripts.<module>`,
+# so run them as modules from the repository root (NOT `python scripts/x.py`).
+python -m scripts.uflp_solver                                # random demo instance
+python -m scripts.uflp_solver --file data/cap134.txt         # OR-Library (Beasley) instance
+python -m scripts.uflp_solver --n-facilities 25 --n-customers 40 --seed 7
+python -m scripts.uflp_solver --quiet                        # suppress verbose output
 
-# Run the full comparative benchmark (LP-biased vs. alpha-GRASP baseline) against cap134.txt
-# and the generated LP-duality-gap correlation suite; requires cap134.txt in the cwd
-python run_experiments.py
+# Run the full comparative benchmark (LP-biased vs. alpha-GRASP baseline) against
+# data/cap134.txt and the generated LP-duality-gap correlation suite
+python -m scripts.run_experiments
 
-# Run the large-instance scaling benchmark (up to 200x800, imports helpers from run_experiments.py)
-python run_scaling_benchmark.py
+# Run the large-instance scaling benchmark (imports helpers from run_experiments)
+python -m scripts.run_scaling_benchmark
+
+# Real-world California Housing benchmark (4 arms, 3 seeds) -> output/california_4M_results.{md,json}
+python -m scripts.download_and_run_real_world
+python -m scripts.download_and_run_real_world --from-json output/california_4M_results.json
+
+# Koerkel-Ghosh benchmark, the hard family where the LP relaxation is weak
+python -m scripts.run_koerkel_ghosh
 ```
 
-`run_experiments.py` and `run_scaling_benchmark.py` use `ProcessPoolExecutor` with a hardcoded
-`max_workers = 10` (tuned for a 6-core/12-thread machine) — adjust if running on different hardware.
-Both scripts write results/plots to the repo root (`cap134.md`, `cap134.png`, `scaling_results.md`,
-`scaling_analysis.png`) and expect to be run from the repo root.
+`scripts/run_experiments.py` and `scripts/run_scaling_benchmark.py` use `ProcessPoolExecutor` with
+`max_workers = os.cpu_count()`. All scripts resolve data and output paths relative to the working
+directory, so **run them from the repository root**.
 
 ## Agent Quality & Testing Gauntlet (Unit, Mutation & Regression)
 
@@ -110,13 +118,13 @@ Requirements, all of them:
 Run the **whole** checklist below after **every single change** — not once per task, and not only when something feels risky. A "change" is any edit that lands in solver logic, data structures, heuristics, or scripts:
 
 1. `pytest` — ensure 100% pass rate.
-2. `pytest --cov=. --cov-fail-under=85` — verify coverage meets or exceeds 85%.
+2. `pytest --cov --cov-fail-under=85` — verify coverage meets or exceeds 85%.
 3. `mutmut run` — ensure mutants on changed logic are killed.
 4. `sonar-scanner` (when SonarQube server is running) — verify quality gate and coverage import.
 
 ## Architecture
 
-**`uflp_solver.py`** is the canonical, self-contained solver module — other scripts import from it
+**`scripts/uflp_solver.py`** is the canonical, self-contained solver module — other scripts import from it
 rather than reimplementing solver logic. It is organized in numbered pipeline phases, and this
 phase structure (not file layout) is the mental model to use when reasoning about the algorithm:
 
@@ -141,7 +149,7 @@ phase structure (not file layout) is the mental model to use when reasoning abou
 6. **Phase 4 — Orchestration** (`solve_uflp`): wires the three phases together and prints timing
    and a full customer-assignment report when `verbose=True`.
 
-**`run_experiments.py`** imports solver internals from `uflp_solver.py` (`local_search`,
+**`scripts/run_experiments.py`** imports solver internals from `scripts/uflp_solver.py` (`local_search`,
 `_find_closest_two`, `_compute_total_cost`, `_compute_auxiliary_data`) and adds its own
 LP-relaxation/exact-IP solving and constructors (`construct_lp_biased_solution`,
 `construct_uniform_solution`) to run a head-to-head comparison: the LP-biased hybrid solver vs. a
@@ -153,11 +161,33 @@ the ground-truth reference for gap calculations. Work is parallelized across see
 `ProcessPoolExecutor.map`, so task functions passed to the executor must be pickleable (module-level
 functions taking plain tuples), not closures.
 
-**`run_scaling_benchmark.py`** imports helpers from both `uflp_solver.py` and `run_experiments.py`
+**`scripts/run_scaling_benchmark.py`** imports helpers from both `scripts/uflp_solver.py` and `scripts/run_experiments.py`
 and sweeps instance size (20x30 up to 250x800 facilities×customers) to compare wall-clock time and
 solution-quality scaling between the LP-biased and uniform-random constructors, since solving the
 LP relaxation itself has growing overhead as instances scale up.
 
-**`article.tex`** / `article.md` / `walkthrough.md` are the writeup/report describing the method and
-experimental results; `cap134.md`, `cap134.png`, `scaling_results.md`, `scaling_analysis.png` are
-generated benchmark artifacts (regenerated by the two run_* scripts, not hand-edited).
+**`scripts/download_and_run_real_world.py`** builds a 2000x2000 UFLP instance from the California
+Housing census blocks and compares five arms against the same LP bound: LP rounding, rounding +
+local search (the deterministic ablation), LP-biased GRASP, α-GRASP, and local search with no LP at
+all. `render_report` writes `output/california_4M_results.md` and a JSON sidecar; `--from-json`
+re-renders the prose from the sidecar without re-running the benchmark.
+
+**`scripts/koerkel_ghosh.py`** generates Körkel-Ghosh instances to the published specification (the
+standard hard family, where the LP relaxation is genuinely fractional).
+**`scripts/run_koerkel_ghosh.py`** runs the same arms over that family and writes
+`output/koerkel_ghosh_results.{md,json}`.
+
+**Generated artifacts live in `output/`** (`california_4M_results.md`, `koerkel_ghosh_results.md`,
+`cap134.md`, `cap134.png`, `scaling_results.md`, `scaling_analysis.png`, and the JSON sidecars).
+Every script resolves them through its own `OUTPUT_DIR` constant, and the path a script prints is
+the path it wrote. They are regenerated by the `run_*` scripts and must not be hand-edited.
+
+> **Reports are generated, never hand-written.** Every figure in a results file is a measured value
+> carried in a typed record, and every comparative phrase ("lower", "faster", "tighter") is computed
+> from those values rather than written into the template, so a report cannot state a conclusion its
+> own table contradicts. Two regression suites enforce it:
+> `test_report_narrative_regression.py` for the California and Körkel-Ghosh reports, and
+> `test_scaling_discussion_regression.py` for the scaling report. Both feed the renderer
+> mirror-image datasets and require the wording to flip, and both scan the generator source for
+> hardcoded comparative verdicts — ignoring docstrings, so a fix may still explain the defect it
+> fixed.

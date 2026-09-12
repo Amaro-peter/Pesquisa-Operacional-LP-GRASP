@@ -13,7 +13,7 @@ import math
 
 import pytest
 
-from uflp_solver import (
+from scripts.uflp_solver import (
     SolutionState,
     UFLPInstance,
     _compute_auxiliary_data,

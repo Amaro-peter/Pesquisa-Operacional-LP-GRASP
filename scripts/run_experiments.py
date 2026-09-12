@@ -10,7 +10,7 @@ from typing import Dict, List, Tuple, Set
 from concurrent.futures import ProcessPoolExecutor
 
 # Import modular UFLP solver components
-from uflp_solver import (
+from scripts.uflp_solver import (
     UFLPInstance, SolutionState, parse_orlib_instance,
     local_search, _find_closest_two, _compute_total_cost,
     _compute_auxiliary_data
@@ -18,6 +18,10 @@ from uflp_solver import (
 
 from scipy.optimize import linprog
 import scipy.sparse as sp
+
+# All generated artifacts live in output/, alongside every other report.
+OUTPUT_DIR = "output"
+
 
 def get_lp_bound_and_probs(instance: UFLPInstance) -> Tuple[float, Dict[int, float]]:
     """Solve the LP relaxation of UFLP using SciPy (HiGHS) and sparse matrices."""
@@ -312,7 +316,7 @@ def generate_suite_instance(k: int, n_fac: int = 50, n_cust: int = 50, seed: int
 
 def run_local_search_iter_count(instance: UFLPInstance, state: SolutionState) -> Tuple[SolutionState, int, Dict[str, int]]:
     """Run local search, count iterations, and return the breakdown of move types."""
-    from uflp_solver import (
+    from scripts.uflp_solver import (
         _compute_insert_profit, _compute_delete_profit, _compute_swap_profit,
         _apply_move_and_recompute
     )
@@ -641,8 +645,12 @@ def main():
     }
     
     # --- 5. Export results to cap134.md ---
-    print("\nWriting tables of results to cap134.md...")
-    with open("output/cap134.md", "w", encoding="utf-8") as f:
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    cap_md_path = os.path.join(OUTPUT_DIR, "cap134.md")
+    cap_png_path = os.path.join(OUTPUT_DIR, "cap134.png")
+
+    print(f"\nWriting tables of results to {cap_md_path}...")
+    with open(cap_md_path, "w", encoding="utf-8") as f:
         f.write("# Benchmarking and LP Gap Correlation Results on cap134.txt & Suite\n\n")
         f.write("This document summarizes the performance evaluation comparing the **LP-Biased Hybrid GRASP** ")
         f.write("against a standard savings-based **$\\alpha$-parameterized GRASP** baseline ($\\alpha = 0.2$).\n\n")
@@ -879,12 +887,12 @@ def main():
                  fontsize=15, fontweight='bold', y=0.98)
     
     plt.tight_layout(rect=[0, 0, 1, 0.94])
-    plt.savefig("output/cap134.png", dpi=300, facecolor='white')
+    plt.savefig(cap_png_path, dpi=300, facecolor='white')
     plt.close()
     
     print("\nBenchmark completed successfully!")
-    print(f"Results written to: cap134.md")
-    print(f"Visualizations saved to: cap134.png")
+    print(f"Results written to: {cap_md_path}")
+    print(f"Visualizations saved to: {cap_png_path}")
 
 if __name__ == '__main__':
     main()

@@ -20,7 +20,7 @@ import math
 import numpy as np
 import pytest
 
-from download_and_run_real_world import create_california_uflp_instance
+from scripts.download_and_run_real_world import create_california_uflp_instance
 
 pytest.importorskip("sklearn", reason="scikit-learn is required for the California dataset")
 
@@ -166,7 +166,7 @@ class TestLPRelaxationCharacter:
         almost perfectly integral -- this test pins that, so the claim cannot
         be restated without the test going red.
         """
-        from run_experiments import get_lp_bound_and_probs
+        from scripts.run_experiments import get_lp_bound_and_probs
 
         instance = create_california_uflp_instance(n_fac=60, n_cust=60)
         _bound, lp_probs = get_lp_bound_and_probs(instance)
