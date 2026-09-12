@@ -4,7 +4,8 @@ Hybrid LP-GRASP Solver for the Uncapacitated Facility Location Problem (UFLP)
 Based on the framework by Resende & Werneck (2006):
 "A hybrid multistart heuristic for the uncapacitated facility location problem"
 
-Improvement: Uses LP relaxation (Simplex) to bias the GRASP construction phase,
+Improvement: Uses the LP relaxation (solved with SciPy's HiGHS backend) to bias
+the GRASP construction phase,
 replacing uniform random selection with probability-weighted selection derived
 from exact fractional solutions.
 
@@ -24,7 +25,9 @@ import time
 from dataclasses import dataclass, field
 from typing import Dict, List, Set, Tuple
 
-import pulp
+import numpy as np
+from scipy.optimize import linprog
+import scipy.sparse as sp
 
 # ============================================================================
 # Section 1: Data Structures
@@ -147,7 +150,7 @@ def solve_lp_relaxation(
     verbose: bool = True,
 ) -> Dict[int, float]:
     """
-    Solve the LP relaxation of the UFLP using PuLP's default Simplex solver.
+    Solve the LP relaxation of the UFLP with SciPy's `linprog` (HiGHS backend).
 
     Variables:
         y[f] ∈ [0, 1]  — fraction of facility f opened
@@ -160,53 +163,74 @@ def solve_lp_relaxation(
     Returns:
         Dict mapping each facility to its fractional LP value y[f].
     """
-    F = instance.facilities
-    U = instance.customers
-    c = instance.setup_costs
-    d = instance.service_costs
-
-    # --- Model ---
-    model = pulp.LpProblem("UFLP_LP_Relaxation", pulp.LpMinimize)
-
-    # Decision variables (continuous relaxation)
-    y = {f: pulp.LpVariable(f"y_{f}", lowBound=0, upBound=1, cat="Continuous") for f in F}
-    x = {
-        u: {f: pulp.LpVariable(f"x_{u}_{f}", lowBound=0, upBound=1, cat="Continuous") for f in F}
-        for u in U
-    }
-
-    # Objective: minimize setup + service
-    model += (
-        pulp.lpSum(c[f] * y[f] for f in F)
-        + pulp.lpSum(d[u][f] * x[u][f] for u in U for f in F)
-    ), "TotalCost"
-
-    # Constraint 1: every customer is fully assigned
-    for u in U:
-        model += pulp.lpSum(x[u][f] for f in F) == 1, f"Assign_{u}"
-
-    # Constraint 2: linking — can only assign to an open facility
-    for u in U:
-        for f in F:
-            model += x[u][f] <= y[f], f"Link_{u}_{f}"
-
-    # --- Solve ---
-    solver = pulp.PULP_CBC_CMD(msg=0)  # suppress solver output
-    model.solve(solver)
-
-    if model.status != pulp.constants.LpStatusOptimal:
-        raise RuntimeError(f"LP relaxation did not reach optimality (status={model.status})")
-
-    lp_probs: Dict[int, float] = {f: y[f].varValue for f in F}
+    F_list = instance.facilities
+    U_list = instance.customers
+    n_F = len(F_list)
+    n_U = len(U_list)
+    
+    f_map = {f: i for i, f in enumerate(F_list)}
+    u_map = {u: i for i, u in enumerate(U_list)}
+    
+    n_vars = n_F + n_U * n_F
+    
+    c_obj = np.zeros(n_vars)
+    for f in F_list:
+        c_obj[f_map[f]] = instance.setup_costs[f]
+    for u in U_list:
+        for f in F_list:
+            idx = n_F + u_map[u] * n_F + f_map[f]
+            c_obj[idx] = instance.service_costs[u][f]
+            
+    bounds = (0.0, 1.0)
+    
+    A_eq_row, A_eq_col, A_eq_data = [], [], []
+    for u in U_list:
+        u_idx = u_map[u]
+        for f in F_list:
+            A_eq_row.append(u_idx)
+            A_eq_col.append(n_F + u_idx * n_F + f_map[f])
+            A_eq_data.append(1.0)
+    A_eq = sp.csc_matrix((A_eq_data, (A_eq_row, A_eq_col)), shape=(n_U, n_vars))
+    b_eq = np.ones(n_U)
+    
+    n_ineq = n_U * n_F
+    A_ub_row, A_ub_col, A_ub_data = [], [], []
+    
+    row_idx = 0
+    for u in U_list:
+        u_idx = u_map[u]
+        for f in F_list:
+            f_idx = f_map[f]
+            # x[u][f]
+            A_ub_row.append(row_idx)
+            A_ub_col.append(n_F + u_idx * n_F + f_idx)
+            A_ub_data.append(1.0)
+            
+            # -y[f]
+            A_ub_row.append(row_idx)
+            A_ub_col.append(f_idx)
+            A_ub_data.append(-1.0)
+            
+            row_idx += 1
+            
+    A_ub = sp.csc_matrix((A_ub_data, (A_ub_row, A_ub_col)), shape=(n_ineq, n_vars))
+    b_ub = np.zeros(n_ineq)
+    
+    res = linprog(c_obj, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=[bounds]*n_vars, method='highs')
+    
+    if not res.success:
+        raise RuntimeError(f"LP relaxation did not reach optimality (status={res.status}): {res.message}")
+        
+    lp_probs: Dict[int, float] = {f: res.x[f_map[f]] for f in F_list}
 
     if verbose:
-        lp_obj = pulp.value(model.objective)
+        lp_obj = res.fun
         n_frac = sum(1 for v in lp_probs.values() if 0.01 < v < 0.99)
         n_integral = sum(1 for v in lp_probs.values() if v >= 0.99)
         print(f"[Phase 1] LP Relaxation solved")
         print(f"          LP objective (lower bound): {lp_obj:,.2f}")
-        print(f"          Facilities integral (y>=0.99): {n_integral}/{len(F)}")
-        print(f"          Facilities fractional: {n_frac}/{len(F)}")
+        print(f"          Facilities integral (y>=0.99): {n_integral}/{len(F_list)}")
+        print(f"          Facilities fractional: {n_frac}/{len(F_list)}")
 
     return lp_probs
 
@@ -294,8 +318,7 @@ def _compute_auxiliary_data(
         benefit = -c[f_i]
         for u in U:
             gain = d[u][phi1[u]] - d[u][f_i]
-            if gain > 0:
-                benefit += gain
+            benefit += max(0.0, gain)
         state.save[f_i] = benefit
 
     # --- loss[f_r] for each open facility ---
@@ -314,11 +337,12 @@ def _compute_auxiliary_data(
             correction = 0.0
             for u in U:
                 if phi1[u] == f_r:
-                    fi_dist = d[u][f_i]
-                    second_dist = d[u][phi2[u]]
-                    if fi_dist < second_dist:
-                        correction += second_dist - fi_dist
-            if correction > 1e-12:
+                    # Formula to perfectly correct the double counting of save and loss:
+                    # extra_u = d(u, phi2[u]) - min(d(u, f_i), d(u, phi2[u])) - max(0, d(u, f_r) - d(u, f_i))
+                    # It is only non-zero when d(u, f_i) < d(u, phi2[u])
+                    if d[u][f_i] < d[u][phi2[u]]:
+                        correction += (d[u][phi2[u]] - d[u][f_i]) - max(0, d[u][f_r] - d[u][f_i])
+            if abs(correction) > 1e-12:
                 state.extra[(f_i, f_r)] = correction
 
 
@@ -329,39 +353,30 @@ def _compute_swap_profit(
     f_r: int,
 ) -> float:
     """
-    Compute the EXACT profit of swapping f_r (open) with f_i (closed).
-
-    This directly calculates the cost delta without relying on save/loss/extra
-    decomposition, avoiding the double-counting issue in the original formula.
-
-    profit > 0 means the swap improves the solution.
+    Compute the EXACT profit of swapping f_r (open) with f_i (closed) in O(1).
+    We use the precomputed save, loss, and extra arrays, but adjust for the
+    double-counting of customers currently assigned to f_r who also benefit from f_i.
     """
-    d = instance.service_costs
-    c = instance.setup_costs
-    phi1 = state.closest_facility
-    phi2 = state.second_closest_facility
+    # If there's only 1 open facility, we can't use loss (it assumes phi2 is a valid backup)
+    if len(state.open_facilities) == 1:
+        d = instance.service_costs
+        delta = instance.setup_costs[f_i] - instance.setup_costs[f_r]
+        for u in instance.customers:
+            delta += d[u][f_i] - d[u][f_r]
+        return -delta
 
-    # Setup cost delta: pay c(f_i), save c(f_r)
-    delta = c[f_i] - c[f_r]
-
-    for u in instance.customers:
-        old_cost = d[u][phi1[u]]
-
-        if phi1[u] == f_r:
-            # This customer's closest is being removed.
-            # If there is only 1 open facility, the only remaining open facility is f_i.
-            # Otherwise, the new closest is either f_i or the second closest facility.
-            if len(state.open_facilities) > 1:
-                new_cost = min(d[u][f_i], d[u][phi2[u]])
-            else:
-                new_cost = d[u][f_i]
-        else:
-            # Closest survives. But f_i might be even closer.
-            new_cost = min(old_cost, d[u][f_i])
-
-        delta += new_cost - old_cost
-
-    return -delta  # profit = reduction in cost = -delta
+    profit = state.save[f_i] - state.loss[f_r] + state.extra.get((f_i, f_r), 0.0)
+    
+    # Correct the double-counting: for any customer where phi1 == f_r,
+    # save[f_i] already included max(0, d(u, f_r) - d(u, f_i)).
+    # We must subtract this out because the f_r facility is being removed,
+    # and their true reassignment is handled by loss + extra.
+    # To do this in O(1) time without looping over all users, we would need 
+    # to store this specific overlap. Since the current state doesn't have it,
+    # we can store it in another sparse dict, or we can just compute the correction 
+    # during _compute_auxiliary_data. Let's assume we update _compute_auxiliary_data
+    # to include this overlap subtraction directly in `extra`.
+    return profit
 
 
 def _compute_insert_profit(
@@ -369,17 +384,8 @@ def _compute_insert_profit(
     state: SolutionState,
     f_i: int,
 ) -> float:
-    """Compute exact profit of inserting closed facility f_i."""
-    d = instance.service_costs
-    c = instance.setup_costs
-
-    delta = c[f_i]  # pay setup
-    for u in instance.customers:
-        old_cost = d[u][state.closest_facility[u]]
-        new_cost = min(old_cost, d[u][f_i])
-        delta += new_cost - old_cost
-
-    return -delta
+    """Compute exact profit of inserting closed facility f_i in O(1)."""
+    return state.save[f_i]
 
 
 def _compute_delete_profit(
@@ -387,16 +393,8 @@ def _compute_delete_profit(
     state: SolutionState,
     f_r: int,
 ) -> float:
-    """Compute exact profit of removing open facility f_r."""
-    d = instance.service_costs
-    c = instance.setup_costs
-
-    delta = -c[f_r]  # save setup
-    for u in instance.customers:
-        if state.closest_facility[u] == f_r:
-            delta += d[u][state.second_closest_facility[u]] - d[u][f_r]
-
-    return -delta
+    """Compute exact profit of removing open facility f_r in O(1)."""
+    return -state.loss[f_r]
 
 
 def construct_solution(
@@ -563,6 +561,35 @@ def local_search(
 # Section 6: Phase 4 — Main Orchestration
 # ============================================================================
 
+def validate_instance(instance: UFLPInstance) -> None:
+    """
+    Reject degenerate or incomplete instances before any solving happens.
+
+    Without this guard a customer-free instance silently returns a non-zero
+    cost (the construction fallback force-opens one facility and the local
+    search may never delete the last open facility), and a facility-free
+    instance surfaces as an opaque SciPy error from deep inside `linprog`.
+    """
+    if not instance.facilities:
+        raise ValueError("UFLP instance must contain at least one facility")
+    if not instance.customers:
+        raise ValueError("UFLP instance must contain at least one customer")
+
+    missing_setup = [f for f in instance.facilities if f not in instance.setup_costs]
+    if missing_setup:
+        raise ValueError(f"Missing setup costs for facilities: {missing_setup}")
+
+    for u in instance.customers:
+        row = instance.service_costs.get(u)
+        if row is None:
+            raise ValueError(f"Missing service costs for customer {u}")
+        missing_service = [f for f in instance.facilities if f not in row]
+        if missing_service:
+            raise ValueError(
+                f"Missing service costs for customer {u}, facilities: {missing_service}"
+            )
+
+
 def solve_uflp(
     instance: UFLPInstance,
     verbose: bool = True,
@@ -572,10 +599,13 @@ def solve_uflp(
     Solve a UFLP instance using the Hybrid LP-GRASP pipeline.
 
     Pipeline:
+        0. Instance validation
         1. LP relaxation → fractional probabilities
         2. Probabilistic construction → initial solution
         3. Best-improvement local search → local optimum
     """
+    validate_instance(instance)
+
     if seed is not None:
         random.seed(seed)
 

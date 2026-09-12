@@ -1,0 +1,178 @@
+{
+  "generated_at": "2026-09-12 03:22 UTC",
+  "generated_by": "download_and_run_real_world.py::render_report",
+  "git_commit": "af59498 (working tree modified)",
+  "environment": {
+    "python": "3.14.6",
+    "numpy": "2.5.3",
+    "scipy": "1.18.1",
+    "scikit_learn": "1.9.1",
+    "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "cpu_count": "12"
+  },
+  "instance": {
+    "n_facilities": 2000,
+    "n_customers": 2000,
+    "dataset_seed": 42,
+    "base_setup_cost": 5000.0,
+    "setup_floor": 1000.0,
+    "km_per_degree": 111.0,
+    "cost_per_km": 10.0
+  },
+  "seeds": [
+    42,
+    7,
+    2024
+  ],
+  "construction_eps": 0.01,
+  "lp_profile": {
+    "bound": 397600.4830654799,
+    "solve_seconds": 67.01828140999987,
+    "n_facilities": 2000,
+    "n_integral_open": 54,
+    "n_fractional": 7,
+    "n_near_zero": 1939,
+    "sum_y": 57.5,
+    "rounded_open_count": 61
+  },
+  "arms": {
+    "lp_rounding_control": {
+      "method": "LP rounding (control)",
+      "seed": null,
+      "initial_cost": 401706.8760080003,
+      "initial_gap": 1.03279375086778,
+      "initial_open": 61,
+      "final_cost": 401706.8760080003,
+      "final_gap": 1.03279375086778,
+      "final_open": 61,
+      "iterations": 0,
+      "moves": {
+        "insert": 0,
+        "delete": 0,
+        "swap": 0
+      },
+      "construct_seconds": 9.150416082999982,
+      "search_seconds": 0.0,
+      "lp_seconds": 67.01828140999987
+    },
+    "lp_biased": [
+      {
+        "method": "LP-biased hybrid GRASP",
+        "seed": 42,
+        "initial_cost": 533580.058057159,
+        "initial_gap": 34.2000527623315,
+        "initial_open": 75,
+        "final_cost": 397767.9731057731,
+        "final_gap": 0.04212521046298947,
+        "final_open": 58,
+        "iterations": 20,
+        "moves": {
+          "insert": 0,
+          "delete": 17,
+          "swap": 3
+        },
+        "construct_seconds": 10.003622489000008,
+        "search_seconds": 173.41339724099998,
+        "lp_seconds": 67.01828140999987
+      },
+      {
+        "method": "LP-biased hybrid GRASP",
+        "seed": 7,
+        "initial_cost": 559185.374805791,
+        "initial_gap": 40.64001393924364,
+        "initial_open": 84,
+        "final_cost": 397767.9731057731,
+        "final_gap": 0.04212521046298947,
+        "final_open": 58,
+        "iterations": 27,
+        "moves": {
+          "insert": 0,
+          "delete": 26,
+          "swap": 1
+        },
+        "construct_seconds": 11.006429011999899,
+        "search_seconds": 304.84477498700016,
+        "lp_seconds": 67.01828140999987
+      },
+      {
+        "method": "LP-biased hybrid GRASP",
+        "seed": 2024,
+        "initial_cost": 484716.19300508185,
+        "initial_gap": 21.910363203772835,
+        "initial_open": 69,
+        "final_cost": 397767.9731057731,
+        "final_gap": 0.04212521046298947,
+        "final_open": 58,
+        "iterations": 14,
+        "moves": {
+          "insert": 0,
+          "delete": 11,
+          "swap": 3
+        },
+        "construct_seconds": 9.382868072000292,
+        "search_seconds": 157.88317379699993,
+        "lp_seconds": 67.01828140999987
+      }
+    ],
+    "alpha_grasp": [
+      {
+        "method": "alpha-GRASP baseline (alpha=0.2)",
+        "seed": 42,
+        "initial_cost": 469446.6702627575,
+        "initial_gap": 18.06994464477183,
+        "initial_open": 66,
+        "final_cost": 398969.681115388,
+        "final_gap": 0.3443652883295432,
+        "final_open": 57,
+        "iterations": 36,
+        "moves": {
+          "insert": 0,
+          "delete": 9,
+          "swap": 27
+        },
+        "construct_seconds": 161.43355513099982,
+        "search_seconds": 398.6841887650003,
+        "lp_seconds": 0.0
+      },
+      {
+        "method": "alpha-GRASP baseline (alpha=0.2)",
+        "seed": 7,
+        "initial_cost": 474498.0195852854,
+        "initial_gap": 19.340403192402917,
+        "initial_open": 64,
+        "final_cost": 398329.6020313559,
+        "final_gap": 0.1833797988006772,
+        "final_open": 59,
+        "iterations": 38,
+        "moves": {
+          "insert": 0,
+          "delete": 5,
+          "swap": 33
+        },
+        "construct_seconds": 131.19813160000012,
+        "search_seconds": 401.82904623000013,
+        "lp_seconds": 0.0
+      },
+      {
+        "method": "alpha-GRASP baseline (alpha=0.2)",
+        "seed": 2024,
+        "initial_cost": 470480.15852942615,
+        "initial_gap": 18.329875985574155,
+        "initial_open": 62,
+        "final_cost": 397767.9731057731,
+        "final_gap": 0.04212521046298947,
+        "final_open": 58,
+        "iterations": 30,
+        "moves": {
+          "insert": 0,
+          "delete": 4,
+          "swap": 26
+        },
+        "construct_seconds": 128.10121927699993,
+        "search_seconds": 300.44981483599986,
+        "lp_seconds": 0.0
+      }
+    ]
+  },
+  "wall_seconds": 2272.1171265450002
+}

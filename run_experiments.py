@@ -16,33 +16,89 @@ from uflp_solver import (
     _compute_auxiliary_data
 )
 
+from scipy.optimize import linprog
+import scipy.sparse as sp
+
 def get_lp_bound_and_probs(instance: UFLPInstance) -> Tuple[float, Dict[int, float]]:
-    """Solve the LP relaxation of UFLP using PuLP and return objective value and probabilities."""
-    F = instance.facilities
-    U = instance.customers
-    c = instance.setup_costs
-    d = instance.service_costs
-
-    model = pulp.LpProblem("LP_Relaxation_Experiments", pulp.LpMinimize)
-    y = {f: pulp.LpVariable(f"y_{f}", lowBound=0, upBound=1, cat="Continuous") for f in F}
-    x = {u: {f: pulp.LpVariable(f"x_{u}_{f}", lowBound=0, upBound=1, cat="Continuous") for f in F} for u in U}
-
-    model += (
-        pulp.lpSum(c[f] * y[f] for f in F)
-        + pulp.lpSum(d[u][f] * x[u][f] for u in U for f in F)
-    )
-
-    for u in U:
-        model += pulp.lpSum(x[u][f] for f in F) == 1
-    for u in U:
-        for f in F:
-            model += x[u][f] <= y[f]
-
-    solver = pulp.PULP_CBC_CMD(msg=0)
-    model.solve(solver)
+    """Solve the LP relaxation of UFLP using SciPy (HiGHS) and sparse matrices."""
+    F_list = instance.facilities
+    U_list = instance.customers
+    n_F = len(F_list)
+    n_U = len(U_list)
     
-    lp_obj = pulp.value(model.objective)
-    lp_probs = {f: y[f].varValue for f in F}
+    # Map facilities and customers to 0-indexed integers if they aren't already
+    # Although they usually are, it's safer.
+    f_map = {f: i for i, f in enumerate(F_list)}
+    u_map = {u: i for i, u in enumerate(U_list)}
+    
+    # Variables: y[0...n_F-1], then x[0...n_U*n_F-1]
+    # Total vars = n_F + n_U * n_F
+    n_vars = n_F + n_U * n_F
+    
+    # Objective vector c
+    c_obj = np.zeros(n_vars)
+    for f in F_list:
+        c_obj[f_map[f]] = instance.setup_costs[f]
+    for u in U_list:
+        for f in F_list:
+            idx = n_F + u_map[u] * n_F + f_map[f]
+            c_obj[idx] = instance.service_costs[u][f]
+            
+    # Bounds: all variables between 0 and 1
+    bounds = (0.0, 1.0)
+    
+    # Equality constraints: sum_f x[u][f] = 1
+    # n_U rows, n_vars columns
+    A_eq_row = []
+    A_eq_col = []
+    A_eq_data = []
+    for u in U_list:
+        u_idx = u_map[u]
+        for f in F_list:
+            f_idx = f_map[f]
+            col_idx = n_F + u_idx * n_F + f_idx
+            A_eq_row.append(u_idx)
+            A_eq_col.append(col_idx)
+            A_eq_data.append(1.0)
+    A_eq = sp.csc_matrix((A_eq_data, (A_eq_row, A_eq_col)), shape=(n_U, n_vars))
+    b_eq = np.ones(n_U)
+    
+    # Inequality constraints: x[u][f] - y[f] <= 0
+    # n_U * n_F rows, n_vars columns
+    n_ineq = n_U * n_F
+    A_ub_row = []
+    A_ub_col = []
+    A_ub_data = []
+    
+    row_idx = 0
+    for u in U_list:
+        u_idx = u_map[u]
+        for f in F_list:
+            f_idx = f_map[f]
+            # x[u][f]
+            x_col = n_F + u_idx * n_F + f_idx
+            A_ub_row.append(row_idx)
+            A_ub_col.append(x_col)
+            A_ub_data.append(1.0)
+            
+            # -y[f]
+            A_ub_row.append(row_idx)
+            A_ub_col.append(f_idx)
+            A_ub_data.append(-1.0)
+            
+            row_idx += 1
+            
+    A_ub = sp.csc_matrix((A_ub_data, (A_ub_row, A_ub_col)), shape=(n_ineq, n_vars))
+    b_ub = np.zeros(n_ineq)
+    
+    # Solve
+    res = linprog(c_obj, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=[bounds]*n_vars, method='highs')
+    
+    if not res.success:
+        raise RuntimeError(f"LP relaxation failed: {res.message}")
+        
+    lp_obj = res.fun
+    lp_probs = {f: res.x[f_map[f]] for f in F_list}
     return lp_obj, lp_probs
 
 def solve_exact_ip(instance: UFLPInstance) -> float:
@@ -407,9 +463,11 @@ def run_single_suite_instance_task(args) -> dict:
     return res
 
 def main():
-    instance_file = "cap134.txt"
-    if not os.path.exists(instance_file):
-        print(f"Error: {instance_file} not found in current directory.")
+    # cap134.txt lives in data/; fall back to the repo root for older layouts.
+    candidates = ["data/cap134.txt", "cap134.txt"]
+    instance_file = next((p for p in candidates if os.path.exists(p)), None)
+    if instance_file is None:
+        print(f"Error: cap134.txt not found (looked in: {', '.join(candidates)}).")
         sys.exit(1)
         
     print(f"Loading UFLP instance: {instance_file}")
@@ -435,7 +493,7 @@ def main():
     
     # Determine CPU core count for workers
     # 12 threads available on Ryzen 5 5600X, we will use max 10 to leave overhead
-    max_workers = 10
+    max_workers = os.cpu_count() or 4
     print(f"\nSubmitting {n_seeds} benchmark runs on cap134.txt across {max_workers} processes...")
     
     tasks_cap = []
@@ -584,7 +642,7 @@ def main():
     
     # --- 5. Export results to cap134.md ---
     print("\nWriting tables of results to cap134.md...")
-    with open("cap134.md", "w", encoding="utf-8") as f:
+    with open("output/cap134.md", "w", encoding="utf-8") as f:
         f.write("# Benchmarking and LP Gap Correlation Results on cap134.txt & Suite\n\n")
         f.write("This document summarizes the performance evaluation comparing the **LP-Biased Hybrid GRASP** ")
         f.write("against a standard savings-based **$\\alpha$-parameterized GRASP** baseline ($\\alpha = 0.2$).\n\n")
@@ -821,7 +879,7 @@ def main():
                  fontsize=15, fontweight='bold', y=0.98)
     
     plt.tight_layout(rect=[0, 0, 1, 0.94])
-    plt.savefig("cap134.png", dpi=300, facecolor='white')
+    plt.savefig("output/cap134.png", dpi=300, facecolor='white')
     plt.close()
     
     print("\nBenchmark completed successfully!")
