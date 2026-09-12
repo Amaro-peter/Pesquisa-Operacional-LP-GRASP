@@ -298,6 +298,52 @@ def run_lp_rounding_plus_search(
     )
 
 
+def run_local_search_only(instance: UFLPInstance, lp_bound: float) -> ArmResult:
+    """
+    Control arm with NO LP guidance at all.
+
+    Starts from the single cheapest facility by total cost (setup plus the sum
+    of its service costs -- the same fallback rule `construct_solution` uses)
+    and runs the same local search. It never reads the relaxation.
+
+    This is the control that isolates what the LP contributes *at all*, as
+    opposed to what the randomized construction contributes on top of it. It
+    matters on instance families where the relaxation is weak: if this arm
+    matches the LP-guided arms, the LP solve is buying nothing but time.
+    """
+    t0 = time.perf_counter()
+    cheapest = min(
+        instance.facilities,
+        key=lambda f: (
+            instance.setup_costs[f]
+            + sum(instance.service_costs[u][f] for u in instance.customers)
+        ),
+    )
+    state = _finalise(instance, {cheapest})
+    t_construct = time.perf_counter() - t0
+    initial_cost, initial_open = state.total_cost, len(state.open_facilities)
+
+    t0 = time.perf_counter()
+    state, iterations, moves = run_local_search_iter_count(instance, state)
+    t_search = time.perf_counter() - t0
+
+    return ArmResult(
+        method="Local search only (no LP)",
+        seed=None,
+        initial_cost=initial_cost,
+        initial_gap=(initial_cost - lp_bound) / lp_bound * 100.0,
+        initial_open=initial_open,
+        final_cost=state.total_cost,
+        final_gap=(state.total_cost - lp_bound) / lp_bound * 100.0,
+        final_open=len(state.open_facilities),
+        iterations=iterations,
+        moves=moves,
+        construct_seconds=t_construct,
+        search_seconds=t_search,
+        lp_seconds=0.0,  # this arm never solves the LP
+    )
+
+
 def run_lp_biased(
     instance: UFLPInstance,
     lp_probs: Dict[int, float],
@@ -873,17 +919,20 @@ def render_report(
         w(f"{ratio_iters_f:.1f}× the local-search cost. See §6.")
     w("")
 
-    ls_helps = m_lb_final < control.final_gap - 1e-9
+    ls_helps = rounding_ls.final_gap < control.final_gap - 1e-9
     if ls_helps:
-        factor = control.final_gap / m_lb_final if m_lb_final > 0 else float("inf")
-        w(f"**4. The local search earns its keep.** The control (arm A) reaches {control.final_gap:.4f}%;")
-        w(f"arm B reaches {m_lb_final:.4f}% — better by a factor of {factor:.1f}×. Simply rounding the LP")
-        w("is *not* sufficient at this scale, so the local search is contributing real improvement")
-        w("and not merely undoing its own construction noise.")
+        factor = (control.final_gap / rounding_ls.final_gap
+                  if rounding_ls.final_gap > 0 else float("inf"))
+        w(f"**4. The local search earns its keep.** Arm A+ takes the same rounded solution the")
+        w(f"control stops at ({control.final_gap:.4f}%) and improves it to {rounding_ls.final_gap:.4f}% —")
+        w(f"better by a factor of {factor:.1f}× — in {rounding_ls.iterations} "
+          f"{_plural(rounding_ls.iterations, 'iteration')}. Because arm A+ introduces no construction")
+        w("noise of its own, this is a clean demonstration that the local search does real work")
+        w("rather than merely repairing a randomized start. Rounding the LP alone is not enough.")
     else:
         w(f"**4. The local search does not improve on rounding.** The control (arm A) reaches")
-        w(f"{control.final_gap:.4f}% and arm B reaches {m_lb_final:.4f}%, so the construction and local")
-        w("search together add no quality over simply rounding the LP solution.")
+        w(f"{control.final_gap:.4f}% and arm A+ reaches {rounding_ls.final_gap:.4f}%, so the local")
+        w("search adds no quality over simply rounding the LP solution.")
     w("")
     better = _cmp(m_lb_final, m_al_final, "better", "worse", tie="level with")
     w(f"**5. Arm B ends {better} than arm C** ({m_lb_final:.4f}% vs {m_al_final:.4f}%) and is")
@@ -911,6 +960,10 @@ def render_report(
         w(f"({al_distinct} distinct {_plural(al_distinct, 'solution')}). A single-seed comparison")
         w("cannot see this, and it is arguably the more practically important difference:")
         w("an arm whose answer does not depend on the seed can be run once.")
+        w("")
+        w(f"Note the scope of that claim, though: arm A+ is *deterministic*, so it reaches")
+        w(f"{rounding_ls.final_gap:.4f}% with no seed at all. Reproducibility here is a property of")
+        w("not randomizing, which arm A+ achieves more directly than arm B does.")
         w("")
         next_n = 7
     else:

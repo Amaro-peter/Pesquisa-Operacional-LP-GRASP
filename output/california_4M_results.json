@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-09-12 03:22 UTC",
+  "generated_at": "2026-09-12 04:40 UTC",
   "generated_by": "download_and_run_real_world.py::render_report",
-  "git_commit": "af59498 (working tree modified)",
+  "git_commit": "f7fbf89",
   "environment": {
     "python": "3.14.6",
     "numpy": "2.5.3",
@@ -27,7 +27,7 @@
   "construction_eps": 0.01,
   "lp_profile": {
     "bound": 397600.4830654799,
-    "solve_seconds": 67.01828140999987,
+    "solve_seconds": 164.24392548300057,
     "n_facilities": 2000,
     "n_integral_open": 54,
     "n_fractional": 7,
@@ -51,9 +51,28 @@
         "delete": 0,
         "swap": 0
       },
-      "construct_seconds": 9.150416082999982,
+      "construct_seconds": 12.76441640899975,
       "search_seconds": 0.0,
-      "lp_seconds": 67.01828140999987
+      "lp_seconds": 164.24392548300057
+    },
+    "lp_rounding_plus_search": {
+      "method": "LP rounding + local search (deterministic ablation)",
+      "seed": null,
+      "initial_cost": 401706.8760080003,
+      "initial_gap": 1.03279375086778,
+      "initial_open": 61,
+      "final_cost": 397767.9731057731,
+      "final_gap": 0.04212521046298947,
+      "final_open": 58,
+      "iterations": 5,
+      "moves": {
+        "insert": 0,
+        "delete": 3,
+        "swap": 2
+      },
+      "construct_seconds": 8.083212927999739,
+      "search_seconds": 49.28286083100011,
+      "lp_seconds": 164.24392548300057
     },
     "lp_biased": [
       {
@@ -71,9 +90,9 @@
           "delete": 17,
           "swap": 3
         },
-        "construct_seconds": 10.003622489000008,
-        "search_seconds": 173.41339724099998,
-        "lp_seconds": 67.01828140999987
+        "construct_seconds": 9.02749583900004,
+        "search_seconds": 253.5926300659994,
+        "lp_seconds": 164.24392548300057
       },
       {
         "method": "LP-biased hybrid GRASP",
@@ -90,9 +109,9 @@
           "delete": 26,
           "swap": 1
         },
-        "construct_seconds": 11.006429011999899,
-        "search_seconds": 304.84477498700016,
-        "lp_seconds": 67.01828140999987
+        "construct_seconds": 9.842638497000735,
+        "search_seconds": 232.78582010799983,
+        "lp_seconds": 164.24392548300057
       },
       {
         "method": "LP-biased hybrid GRASP",
@@ -109,9 +128,9 @@
           "delete": 11,
           "swap": 3
         },
-        "construct_seconds": 9.382868072000292,
-        "search_seconds": 157.88317379699993,
-        "lp_seconds": 67.01828140999987
+        "construct_seconds": 9.063820239000052,
+        "search_seconds": 114.64809757500007,
+        "lp_seconds": 164.24392548300057
       }
     ],
     "alpha_grasp": [
@@ -130,8 +149,8 @@
           "delete": 9,
           "swap": 27
         },
-        "construct_seconds": 161.43355513099982,
-        "search_seconds": 398.6841887650003,
+        "construct_seconds": 118.9749690640001,
+        "search_seconds": 305.25269257500076,
         "lp_seconds": 0.0
       },
       {
@@ -149,8 +168,8 @@
           "delete": 5,
           "swap": 33
         },
-        "construct_seconds": 131.19813160000012,
-        "search_seconds": 401.82904623000013,
+        "construct_seconds": 106.04705996499979,
+        "search_seconds": 314.6838102359998,
         "lp_seconds": 0.0
       },
       {
@@ -168,11 +187,11 @@
           "delete": 4,
           "swap": 26
         },
-        "construct_seconds": 128.10121927699993,
-        "search_seconds": 300.44981483599986,
+        "construct_seconds": 100.75463323400072,
+        "search_seconds": 235.65782382900034,
         "lp_seconds": 0.0
       }
     ]
   },
-  "wall_seconds": 2272.1171265450002
+  "wall_seconds": 2052.5661484210004
 }

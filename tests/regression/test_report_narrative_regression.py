@@ -92,14 +92,16 @@ def _arm(method, seed, init_gap, final_gap, iterations, moves,
 
 
 def _render(lp_init_gap, al_init_gap, lp_final_gap, al_final_gap,
-            lp_search, al_search, lp_construct, al_construct):
+            lp_search, al_search, lp_construct, al_construct,
+            ap_final_gap=0.55):
     from download_and_run_real_world import render_report
 
     lp = _lp()
     control = _arm("LP rounding (control)", None, 1.0, 1.0, 0,
                    {"insert": 0, "delete": 0, "swap": 0}, construct=0.1,
                    search=0.0, lp_seconds=lp.solve_seconds)
-    rounding_ls = _arm("LP rounding + local search (deterministic ablation)", None, 1.0, 0.55, 5,
+    rounding_ls = _arm("LP rounding + local search (deterministic ablation)", None, 1.0,
+                       ap_final_gap, 5,
                        {"insert": 0, "delete": 3, "swap": 2}, construct=0.1,
                        search=40.0, lp_seconds=lp.solve_seconds)
     biased = [_arm("LP-biased hybrid GRASP", 42, lp_init_gap, lp_final_gap, 20,
@@ -181,21 +183,29 @@ class TestWordingFollowsTheData:
 
 
 class TestControlArmIsReported:
-    def test_grasp_uplift_claim_follows_the_control(self):
+    def test_local_search_uplift_claim_follows_the_control(self):
         """
-        The "GRASP layer earns its keep" claim must be conditional on the
-        control's measured gap, not asserted.
+        The "local search earns its keep" claim must be conditional on the
+        measured improvement of arm A+ over the control, not asserted.
+
+        Arm A+ is the right arm to key on: it introduces no construction noise,
+        so any gain it makes over the control is genuine search, not self-repair.
+        The control's gap is fixed at 1.0% by the fixture.
         """
         helps = _render(34.2, 18.1, lp_final_gap=0.0421, al_final_gap=0.3444,
                         lp_search=164.0, al_search=292.0,
-                        lp_construct=9.3, al_construct=106.8)
+                        lp_construct=9.3, al_construct=106.8,
+                        ap_final_gap=0.0421)
         assert "The local search earns its keep" in helps
+        assert "in 5 iterations" in helps
 
-        # Control gap is fixed at 1.0% by the fixture; make arm B worse than it.
+        # A+ no better than the control it started from.
         no_help = _render(34.2, 18.1, lp_final_gap=1.5, al_final_gap=2.0,
                           lp_search=164.0, al_search=292.0,
-                          lp_construct=9.3, al_construct=106.8)
+                          lp_construct=9.3, al_construct=106.8,
+                          ap_final_gap=1.0)
         assert "The local search does not improve on rounding" in no_help
+        assert "The local search earns its keep" not in no_help
 
 
 class TestIntegralityNarrative:
