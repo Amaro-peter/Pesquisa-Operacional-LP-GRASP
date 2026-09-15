@@ -1,11 +1,19 @@
 """
-Unit tests for the Körkel-Ghosh benchmark harness.
+Unit tests for the Körkel-Ghosh multistart benchmark harness.
 
-The harness exists to answer one question — does the randomized construction
-help where the LP is weak? — so the tests concentrate on the part that states
-the answer. The verdict must follow the measured excesses in every direction,
-including the direction that would overturn the finding from the California
-instance. A verdict that can only come out one way is not a verdict.
+The harness answers two questions, and these tests concentrate on the sentences
+that answer them:
+
+  1. With a restart budget, does the LP-biased construction beat the classical
+     α-GRASP baseline?
+  2. Does that restart budget pay for itself against a deterministic single run?
+
+Both verdicts must follow the measurements in every direction — including the
+directions that would overturn this project's earlier single-start conclusion.
+A verdict that can only come out one way is not a verdict.
+
+Reference handling is tested here too: a percentage may only be called an
+"optimality gap" when the integer optimum was actually proven.
 """
 
 import json
@@ -19,183 +27,242 @@ from scripts.run_koerkel_ghosh import _excess, main, render_report, run_one_inst
 ENV = {"python": "3.14.6", "numpy": "2.5.3", "scipy": "1.18.1",
        "scikit_learn": "1.9.1", "platform": "test", "cpu_count": "12"}
 
+REF = 100_000.0
 
-def _record(name, ap_excess, b_excesses, c_excesses, a_excess=5.0,
-            n_fractional=40, rounded_open=3, sum_y=9.0, bound=100_000.0,
-            d_excess=None):
-    """Build a record with prescribed excesses over a best-found cost."""
-    best = bound * 1.02
 
-    def arm(excess, iterations=5):
-        return {
-            "method": "m", "seed": None,
-            "initial_cost": best * 1.3, "initial_gap": 30.0, "initial_open": 20,
-            "final_cost": best * (1 + excess / 100), "final_gap": 1.0, "final_open": 10,
-            "iterations": iterations, "moves": {"insert": 0, "delete": 3, "swap": 2},
-            "construct_seconds": 1.0, "search_seconds": 2.0, "lp_seconds": 3.0,
-        }
-
+def _det_arm(gap_pct, iterations=5):
+    """A deterministic arm landing `gap_pct` above the reference."""
     return {
-        "name": name, "size": 250, "klass": "a", "symmetric": True, "index": 1,
+        "method": "det", "seed": None,
+        "initial_cost": REF * 1.3, "initial_gap": 30.0, "initial_open": 20,
+        "final_cost": REF * (1 + gap_pct / 100), "final_gap": gap_pct, "final_open": 10,
+        "iterations": iterations, "moves": {"insert": 0, "delete": 3, "swap": 2},
+        "construct_seconds": 1.0, "search_seconds": 2.0, "lp_seconds": 3.0,
+    }
+
+
+def _ms_arm(trajectory_gaps, best_found_at=None):
+    """A multistart arm whose best-so-far trajectory is `trajectory_gaps`."""
+    costs = [REF * (1 + g / 100) for g in trajectory_gaps]
+    best = min(trajectory_gaps)
+    if best_found_at is None:
+        best_found_at = trajectory_gaps.index(best) + 1
+    return {
+        "method": "ms", "seeds": list(range(1, len(trajectory_gaps) + 1)),
+        "best_cost": REF * (1 + best / 100), "best_gap": best, "best_open": 10,
+        "best_found_at": best_found_at,
+        "trajectory": list(trajectory_gaps), "trajectory_costs": costs,
+        "per_restart_gaps": list(trajectory_gaps),
+        "total_iterations": 40, "moves": {"insert": 0, "delete": 3, "swap": 2},
+        "construct_seconds": 1.0, "search_seconds": 4.0, "lp_seconds": 3.0,
+    }
+
+
+def _record(name, a=5.0, ap=0.10, d=0.20, b=None, c=None, proven=True, lp_bound=99_000.0):
+    b = b if b is not None else [1.0, 0.5, 0.20]
+    c = c if c is not None else [2.0, 1.0, 0.30]
+    return {
+        "name": name, "size": 100, "klass": "a", "symmetric": True, "index": 1,
         "lp": {
-            "bound": bound, "solve_seconds": 3.0, "n_facilities": 250,
-            "n_integral_open": 5, "n_fractional": n_fractional,
-            "n_near_zero": 250 - n_fractional - 5, "sum_y": sum_y,
-            "rounded_open_count": rounded_open,
+            "bound": lp_bound, "solve_seconds": 1.0, "n_facilities": 100,
+            "n_integral_open": 5, "n_fractional": 30, "n_near_zero": 65,
+            "sum_y": 9.0, "rounded_open_count": 3,
         },
-        "best_cost_found": best,
+        "reference": {
+            "value": REF, "lp_bound": lp_bound, "proven": proven,
+            "ip_status": "Optimal" if proven else "Not Solved",
+            "ip_seconds": 12.0, "incumbent": REF if proven else None,
+        },
+        "best_cost_found": REF,
         "arms": {
-            "lp_rounding_control": arm(a_excess, iterations=0),
-            "lp_rounding_plus_search": arm(ap_excess),
-            "local_search_only": arm(ap_excess if d_excess is None else d_excess),
-            "lp_biased": [arm(e) for e in b_excesses],
-            "alpha_grasp": [arm(e) for e in c_excesses],
+            "lp_rounding_control": _det_arm(a, iterations=0),
+            "lp_rounding_plus_search": _det_arm(ap),
+            "local_search_only": _det_arm(d),
+            "lp_biased_multistart": _ms_arm(b),
+            "alpha_grasp_multistart": _ms_arm(c),
         },
     }
 
 
-def _render(records, seeds=(42, 7)):
-    return render_report(records, list(seeds), 250, ENV,
-                         "2026-09-12 00:00 UTC", "testcommit", 120.0)
+def _render(records, restarts=3, size=100, alpha=0.2):
+    return render_report(records, list(range(1, restarts + 1)), size, ENV,
+                         "2026-09-12 00:00 UTC", "testcommit", 120.0, alpha_value=alpha)
 
 
-def _prose(md: str) -> str:
-    """
-    Flatten the markdown to a single line of prose.
-
-    Sentences in the report wrap across lines and, inside block quotes, are
-    additionally broken by "> " markers. Assertions here are about the claims
-    the report makes, not about where the lines happen to break.
-    """
-    stripped = [line.lstrip().removeprefix("> ").removeprefix(">") for line in md.splitlines()]
+def _prose(md):
+    """Flatten wrapping and blockquote markers; assertions are about claims."""
+    stripped = [ln.lstrip().removeprefix("> ").removeprefix(">") for ln in md.splitlines()]
     return " ".join(" ".join(stripped).split())
 
 
-class TestExcess:
-    def test_excess_is_percent_above_the_best_found(self):
-        assert math.isclose(_excess(110.0, 100.0), 10.0)
-        assert math.isclose(_excess(100.0, 100.0), 0.0)
+# --------------------------------------------------------------------------
+# Reference values: what a percentage is allowed to be called
+# --------------------------------------------------------------------------
 
-    def test_the_best_arm_has_zero_excess(self):
-        assert _excess(100.0, 100.0) == 0.0
+class TestReferenceHonesty:
+    def test_all_proven_is_reported_as_true_optimality_gaps(self):
+        md = _prose(_render([_record("gs100a-1", proven=True),
+                             _record("gs100a-2", proven=True)]))
+        assert "Gaps here are true optimality gaps" in md
+        assert "CBC proved the integer optimum on all" in md
+        assert "OVERSTATE" not in md
+
+    def test_unproven_instances_force_the_weaker_label(self):
+        """COUNTERWEIGHT: an unproven optimum must not be called an optimality gap."""
+        md = _prose(_render([_record("gs100a-1", proven=True),
+                             _record("gs100a-2", proven=False)]))
+        assert "Mixed references" in md
+        assert "CBC proved the integer optimum on 1 of 2" in md
+        assert "OVERSTATE the true optimality gap" in md
+        assert "true optimality gaps" not in md
+
+    def test_unproven_rows_are_flagged_in_the_per_instance_table(self):
+        md = _render([_record("gs100a-1", proven=True), _record("gs100b-1", proven=False)])
+        assert "`gs100b-1` ⚠" in md
+        assert "integer optimum not proven" in md
+
+    def test_proven_count_is_counted_not_asserted(self):
+        md = _prose(_render([_record(f"i{i}", proven=(i < 3)) for i in range(5)]))
+        assert "Integer optima proven | 3 / 5" in md
 
 
-class TestVerdictFollowsTheData:
-    def test_randomization_winning_is_reported_as_vindication(self):
-        """
-        The branch that would overturn the California finding. It must be
-        reachable and must say so plainly.
-        """
-        records = [
-            _record("gs250a-1", ap_excess=1.00, b_excesses=[0.20, 0.30], c_excesses=[0.9, 1.1]),
-            _record("gs250b-1", ap_excess=0.80, b_excesses=[0.10, 0.20], c_excesses=[0.7, 0.8]),
-        ]
-        md = _render(records)
-        assert "Randomization earns its place on this family" in md
-        assert "The LP bias is vindicated on this family" in md
-        assert "does not earn its place" not in md
+# --------------------------------------------------------------------------
+# Question 1: LP-biased GRASP vs classical GRASP, at equal restarts
+# --------------------------------------------------------------------------
 
-    def test_randomization_losing_is_reported_as_the_finding_surviving(self):
-        records = [
-            _record("gs250a-1", ap_excess=0.10, b_excesses=[0.50, 0.60], c_excesses=[0.9, 1.1]),
-            _record("gs250b-1", ap_excess=0.05, b_excesses=[0.40, 0.50], c_excesses=[0.7, 0.8]),
-        ]
-        md = _render(records)
-        assert "Randomization does not earn its place even here" in md
-        assert "The LP bias is not vindicated even here" in md
-        assert "earns its place on this family" not in md
+class TestHeadToHead:
+    def test_lp_biased_winning_is_reported_plainly(self):
+        md = _prose(_render([
+            _record("i1", b=[1.0, 0.10], c=[2.0, 0.50]),
+            _record("i2", b=[1.0, 0.05], c=[2.0, 0.40]),
+        ], restarts=2))
+        assert "the LP-biased construction beats the classical baseline" in md
+        assert "B beat C on 2" in md
 
-    def test_an_exact_tie_is_reported_as_indistinguishable(self):
-        records = [
-            _record("gs250a-1", ap_excess=0.30, b_excesses=[0.30, 0.30], c_excesses=[0.9, 1.1]),
-        ]
-        md = _render(records)
+    def test_baseline_winning_is_reported_plainly(self):
+        """COUNTERWEIGHT: the baseline must be able to win, and be said to."""
+        md = _prose(_render([
+            _record("i1", b=[1.0, 0.50], c=[2.0, 0.10]),
+            _record("i2", b=[1.0, 0.40], c=[2.0, 0.05]),
+        ], restarts=2))
+        assert "the classical baseline beats the LP-biased construction" in md
+        assert "B beat C on 0" in md and "lost on 2" in md
+
+    def test_a_tie_is_reported_as_indistinguishable(self):
+        md = _prose(_render([_record("i1", b=[1.0, 0.2], c=[1.0, 0.2])], restarts=2))
         assert "indistinguishable on this family" in md
-        assert "earns its place" not in md
-        assert "does not earn its place" not in md
 
-    def test_win_loss_tie_counts_are_computed_from_the_records(self):
-        records = [
-            _record("i1", ap_excess=1.0, b_excesses=[0.5], c_excesses=[2.0]),   # B wins
-            _record("i2", ap_excess=0.2, b_excesses=[0.9], c_excesses=[2.0]),   # A+ wins
-            _record("i3", ap_excess=0.4, b_excesses=[0.4], c_excesses=[2.0]),   # tie
-        ]
-        md = _render(records)
-        assert "beat arm A+" in md
-        assert "on **1**" in md and "lost on **1**" in md and "tied on **1**" in md
-
-    def test_best_arm_is_selected_by_measured_mean_excess(self):
-        records = [_record("i1", ap_excess=0.10, b_excesses=[0.90], c_excesses=[0.50], a_excess=5.0)]
-        md = _render(records)
-        assert "Best arm overall: A+ · rounding + local search" in md
-
-        records = [_record("i1", ap_excess=0.90, b_excesses=[0.10], c_excesses=[0.50], a_excess=5.0)]
-        md = _render(records)
-        assert "Best arm overall: B · LP-biased GRASP" in md
-
-
-class TestRoundingCollapseSection:
-    def test_zero_threshold_instances_are_called_out(self):
-        records = [
-            _record("gs250c-1", 0.3, [0.3], [0.5], rounded_open=0, sum_y=3.3),
-            _record("ga250c-1", 0.3, [0.3], [0.5], rounded_open=0, sum_y=3.1),
-            _record("gs250a-1", 0.3, [0.3], [0.5], rounded_open=13, sum_y=29.0),
-        ]
-        md = _render(records)
-        assert "On **2** of 3 instances the relaxation puts *no* facility" in md
-
-    def test_no_callout_when_thresholding_always_selects_something(self):
-        """COUNTERWEIGHT: the collapse claim must not appear when it is untrue."""
-        records = [_record("gs250a-1", 0.3, [0.3], [0.5], rounded_open=13, sum_y=29.0)]
-        md = _render(records)
-        assert "puts *no* facility" not in md
-
-
-class TestProvenanceIsStated:
-    def test_report_declares_the_instances_are_generated_to_spec(self):
+    def test_median_winning_restart_is_reported(self):
         """
-        The one thing a reader must not miss: these are not the official files,
-        so the numbers do not compare to published KG results.
+        How much of the budget each arm actually needed. Without it a
+        best-of-N number cannot be read as anything but best-of-N.
         """
-        md = _render([_record("gs250a-1", 0.3, [0.3], [0.5])])
-        flat = _prose(md)
-        assert "not the official UflLib files" in flat
-        assert "not comparable with published KG results" in flat
-        assert "generated to the published specification" in flat.lower() or \
-               "follows the published specification" in flat
-        assert "render_report" in flat
-        assert "testcommit" in flat
+        md = _prose(_render([_record("i1", b=[2.0, 1.0, 0.2], c=[2.0, 0.3, 0.3])], restarts=3))
+        assert "Median restart that produced the winner" in md
+
+
+# --------------------------------------------------------------------------
+# Question 2: does the restart budget pay for itself?
+# --------------------------------------------------------------------------
+
+class TestMultistartValue:
+    def test_deterministic_arm_holding_up_is_reported_as_such(self):
+        md = _prose(_render([
+            _record("i1", ap=0.05, b=[1.0, 0.30]),
+            _record("i2", ap=0.05, b=[1.0, 0.30]),
+        ], restarts=2))
+        assert "The deterministic arm still holds up" in md
+        assert "does not overturn it at this budget" in md
+
+    def test_multistart_overturning_the_earlier_result_is_reported_as_such(self):
+        """
+        COUNTERWEIGHT, and the most important branch in this file: if the
+        restart loop makes the randomized arm win, the report must say the
+        earlier single-start finding was an artifact of running it once.
+        """
+        md = _prose(_render([
+            _record("i1", ap=0.50, b=[1.0, 0.05]),
+            _record("i2", ap=0.60, b=[1.0, 0.05]),
+        ], restarts=2))
+        assert "Multistart overturns the single-start result" in md
+        assert "an artifact of running it exactly once" in md
+        assert "still holds up" not in md
+
+    def test_restarts_needed_to_match_the_deterministic_arm_are_measured(self):
+        """The compute-matched metric: how many restarts to reach A+'s quality."""
+        md = _prose(_render([
+            _record("i1", ap=0.50, b=[2.0, 1.0, 0.40]),
+            _record("i2", ap=0.50, b=[2.0, 0.45, 0.45]),
+        ], restarts=3))
+        assert "median of" in md and "restart" in md
+
+    def test_instances_never_matched_within_budget_are_called_out(self):
+        md = _prose(_render([
+            _record("i1", ap=0.01, b=[2.0, 1.0, 0.40]),
+            _record("i2", ap=0.01, b=[2.0, 1.0, 0.40]),
+        ], restarts=3))
+        assert "never matched A+ within its 3-restart budget" in md
+
+    def test_the_budget_is_stated_so_best_of_n_cannot_be_read_without_it(self):
+        md = _prose(_render([_record("i1")], restarts=32))
+        assert "Restarts per randomized arm | **32**" in md
+        assert "best-of-32" in md
+        assert "costs N times the work of a single run" in md
+
+
+# --------------------------------------------------------------------------
+# Record shape and end-to-end
+# --------------------------------------------------------------------------
+
+class TestExcess:
+    def test_excess_is_percent_above_the_reference(self):
+        assert math.isclose(_excess(110.0, 100.0), 10.0)
+        assert _excess(100.0, 100.0) == 0.0
 
 
 class TestEndToEnd:
     def test_run_one_instance_produces_a_complete_record(self):
-        rec = run_one_instance(size=30, klass="a", symmetric=True, index=1, seeds=[42, 7])
+        rec = run_one_instance(size=30, klass="a", symmetric=True, index=1,
+                               seeds=[1, 2, 3], alpha_value=0.2, ip_time_limit=60)
 
         assert rec["name"] == "gs30a-1"
         assert set(rec["arms"]) == {
             "lp_rounding_control", "lp_rounding_plus_search", "local_search_only",
-            "lp_biased", "alpha_grasp",
+            "lp_biased_multistart", "alpha_grasp_multistart",
         }
-        assert len(rec["arms"]["lp_biased"]) == 2
-        assert len(rec["arms"]["alpha_grasp"]) == 2
+        assert set(rec["reference"]) >= {"value", "lp_bound", "proven", "ip_status"}
 
-        # The recorded best must actually be the minimum over every arm.
+        ms = rec["arms"]["lp_biased_multistart"]
+        assert len(ms["trajectory"]) == 3
+        assert ms["best_cost"] == pytest.approx(min(ms["trajectory_costs"]))
+        assert 1 <= ms["best_found_at"] <= 3
+
         costs = [
             rec["arms"]["lp_rounding_control"]["final_cost"],
             rec["arms"]["lp_rounding_plus_search"]["final_cost"],
             rec["arms"]["local_search_only"]["final_cost"],
-            *[r["final_cost"] for r in rec["arms"]["lp_biased"]],
-            *[r["final_cost"] for r in rec["arms"]["alpha_grasp"]],
+            rec["arms"]["lp_biased_multistart"]["best_cost"],
+            rec["arms"]["alpha_grasp_multistart"]["best_cost"],
         ]
         assert math.isclose(rec["best_cost_found"], min(costs))
-        # No arm may beat the LP bound -- it is a valid lower bound.
+        # No arm may beat a valid lower bound...
         assert rec["best_cost_found"] >= rec["lp"]["bound"] - 1e-6
+        # ...nor a proven optimum.
+        if rec["reference"]["proven"]:
+            assert rec["best_cost_found"] >= rec["reference"]["value"] - 1e-6
+
+    def test_more_restarts_never_worsen_the_best(self):
+        few = run_one_instance(30, "a", True, 1, seeds=[1, 2], ip_time_limit=60)
+        many = run_one_instance(30, "a", True, 1, seeds=[1, 2, 3, 4, 5, 6], ip_time_limit=60)
+        assert (many["arms"]["lp_biased_multistart"]["best_cost"]
+                <= few["arms"]["lp_biased_multistart"]["best_cost"] + 1e-9)
 
     def test_main_writes_agreeing_markdown_and_json(self, tmp_path, monkeypatch):
         out = tmp_path / "kg"
         monkeypatch.setattr(sys, "argv", [
             "run_koerkel_ghosh.py", "--size", "25", "--classes", "a",
-            "--instances", "1", "--seeds", "42", "--out-dir", str(out),
+            "--instances", "1", "--restarts", "3", "--ip-time-limit", "60",
+            "--out-dir", str(out),
         ])
         main()
 
@@ -203,56 +270,24 @@ class TestEndToEnd:
         payload = json.loads((out / "koerkel_ghosh_results.json").read_text())
 
         assert payload["size"] == 25
-        assert payload["seeds"] == [42]
+        assert payload["restarts"] == 3
+        assert payload["seeds"] == [1, 2, 3]
         assert "NOT the official UflLib files" in payload["provenance"]
-        # One class, both symmetries, one instance each.
         assert len(payload["records"]) == 2
         for rec in payload["records"]:
             assert rec["name"] in md
 
-        for heading in ("## 1. Why this family", "## 2. Results",
-                        "## 3. The ablation: does randomization help here?",
-                        "## 4. Why rounding alone collapses here",
-                        "## 5. Findings", "## 6. Reproduction"):
+        for heading in ("## 1. Setup", "## 2. Results",
+                        "## 3. LP-biased GRASP vs. classical GRASP",
+                        "## 4. Does multistart pay for itself?",
+                        "## 5. Per-instance detail", "## 6. Reproduction"):
             assert heading in md, f"missing {heading}"
 
 
-class TestNoLpControlArm:
-    """
-    Arm D never reads the relaxation. It answers a different question from the
-    A+/B ablation: not "does randomization help?" but "does the LP help at all?"
-    Its verdict must follow the measurements in every direction.
-    """
-
-    def test_no_lp_arm_matching_is_reported_as_the_lp_contributing_nothing(self):
-        records = [
-            _record("i1", ap_excess=0.10, b_excesses=[0.3], c_excesses=[0.4], d_excess=0.10),
-            _record("i2", ap_excess=0.20, b_excesses=[0.3], c_excesses=[0.4], d_excess=0.20),
-        ]
-        md = _render(records)
-        assert "The LP contributes little or nothing on this family" in md
-        assert "The LP does contribute here" not in md
-
-    def test_lp_guided_arm_winning_clearly_is_reported_as_the_lp_contributing(self):
-        records = [
-            _record("i1", ap_excess=0.10, b_excesses=[0.3], c_excesses=[0.4], d_excess=2.00),
-            _record("i2", ap_excess=0.10, b_excesses=[0.3], c_excesses=[0.4], d_excess=2.00),
-        ]
-        md = _render(records)
-        assert "The LP does contribute here" in md
-        assert "contributes little or nothing" not in md
-
-    def test_no_lp_arm_winning_clearly_is_reported_as_the_lp_being_unhelpful(self):
-        """COUNTERWEIGHT: the harshest verdict must also be reachable."""
-        records = [
-            _record("i1", ap_excess=2.00, b_excesses=[0.3], c_excesses=[0.4], d_excess=0.10),
-            _record("i2", ap_excess=2.00, b_excesses=[0.3], c_excesses=[0.4], d_excess=0.10),
-        ]
-        md = _render(records)
-        assert "The LP is actively unhelpful here" in md
-
-    def test_no_lp_arm_appears_in_the_summary_table_and_can_win_overall(self):
-        records = [_record("i1", ap_excess=0.90, b_excesses=[0.9], c_excesses=[0.9], d_excess=0.10)]
-        md = _render(records)
-        assert "D · Local search only (no LP)" in md
-        assert "Best arm overall: D · local search only, no LP" in md
+class TestProvenanceIsStated:
+    def test_report_declares_the_instances_are_generated_to_spec(self):
+        md = _prose(_render([_record("gs100a-1")]))
+        assert "not the official UflLib files" in md
+        assert "not comparable with published KG results" in md
+        assert "render_report" in md
+        assert "testcommit" in md

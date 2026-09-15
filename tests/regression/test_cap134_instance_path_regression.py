@@ -108,17 +108,22 @@ class TestGeneratedArtifactsLandInOutputDir:
         ).read_text()
 
     @pytest.mark.parametrize(
-        "module", ["run_experiments", "run_scaling_benchmark"]
+        "module", ["run_experiments", "run_scaling_benchmark", "run_cap134"]
     )
     def test_scripts_declare_an_output_dir_and_use_it(self, module):
         src = self._source(module)
         assert 'OUTPUT_DIR = "output"' in src, f"{module} has no OUTPUT_DIR constant"
-        assert "os.makedirs(OUTPUT_DIR" in src, f"{module} never creates OUTPUT_DIR"
+        # Either the constant directly, or an --out-dir argument defaulting to it.
+        assert ("os.makedirs(OUTPUT_DIR" in src
+                or "os.makedirs(args.out_dir" in src), f"{module} never creates its output dir"
 
     @pytest.mark.parametrize(
         "module,artifacts",
         [
-            ("run_experiments", ["cap134.md", "cap134.png"]),
+            # run_experiments' cap134 comparison is superseded by run_cap134.py,
+            # so its outputs carry a distinct name and the two cannot be confused.
+            ("run_experiments", ["duality_gap_suite.md", "duality_gap_suite.png"]),
+            ("run_cap134", ["cap134_results.md", "cap134_results.json"]),
             ("run_scaling_benchmark", ["scaling_results.md", "scaling_analysis.png"]),
         ],
     )
@@ -145,3 +150,38 @@ class TestGeneratedArtifactsLandInOutputDir:
         src = self._source("run_experiments")
         assert '"data/cap134.txt"' in src
         assert 'os.path.join(OUTPUT_DIR, "cap134.txt")' not in src
+
+
+class TestSupersededArtifactsCannotBeConfused:
+    """
+    `run_cap134.py` reports cap134 as a multistart benchmark against the proven
+    optimum. `run_experiments.py` still contains an older single-start cap134
+    comparison, and for a while both wrote `output/cap134.md` -- so whichever
+    script ran last silently decided what "the cap134 result" was.
+
+    Two artifacts describing the same instance with different methodologies
+    must not share a filename.
+    """
+
+    @staticmethod
+    def _source(name):
+        import pathlib
+
+        return (pathlib.Path(__file__).resolve().parents[2] / "scripts" / f"{name}.py").read_text()
+
+    def test_the_two_cap134_producers_write_different_files(self):
+        legacy = self._source("run_experiments")
+        current = self._source("run_cap134")
+
+        assert "duality_gap_suite.md" in legacy
+        assert "cap134.md" not in legacy, "the legacy script reclaimed the superseded name"
+        assert "cap134_results.md" in current
+        assert "duality_gap_suite" not in current
+
+    def test_the_supersession_is_documented_where_the_name_is_chosen(self):
+        """COUNTERWEIGHT: a rename with no explanation invites a later revert."""
+        legacy = self._source("run_experiments")
+        i = legacy.index("duality_gap_suite.md")
+        context = legacy[max(0, i - 500):i]
+        assert "SUPERSEDED" in context or "superseded" in context
+        assert "run_cap134" in context

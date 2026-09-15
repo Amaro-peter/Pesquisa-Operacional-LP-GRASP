@@ -1,25 +1,28 @@
-# LP-XLS — LP-Seeded Exact-Delta Local Search for the Uncapacitated Facility Location Problem
+# MS-LP-GRASP — Multistart GRASP with LP-Biased Construction for the UFLP
 
-A solver, a benchmark harness, and an honest evaluation of whether an LP relaxation
-can usefully guide a local-search heuristic for the **Uncapacitated Facility Location
-Problem (UFLP)**, also known as the Simple Plant Location Problem.
+A from-scratch implementation and **adversarial evaluation** of a hybrid heuristic for the
+Uncapacitated Facility Location Problem: a GRASP whose constructive phase samples
+facilities using the fractional values of the LP relaxation instead of a uniform or
+savings-based rule, followed by a best-improvement local search with exact `save`/`loss`/`extra`
+delta evaluation (Resende & Werneck, 2006).
 
-The short answer, stated up front because it is the least flattering one: **the LP
-relaxation helps, the local search helps, and the randomized construction — the part
-originally proposed as the contribution — does not.**
+The interesting part of this repository is not the heuristic. It is the evaluation.
+The method was run against four ablations on **48 Körkel-Ghosh instances spanning six
+sizes**, a 2000×2000 real-world instance, and a classical OR-Library control — and the
+headline claim it started with did not survive.
 
 ---
 
 ## Contents
 
-- [Summary of findings](#summary-of-findings)
-- [A note on naming](#a-note-on-naming)
+- [Headline results](#headline-results)
+- [What the evidence supports — and what it does not](#what-the-evidence-supports--and-what-it-does-not)
 - [The problem](#the-problem)
 - [The method](#the-method)
 - [Repository structure](#repository-structure)
 - [Datasets](#datasets)
-- [Results](#results)
-- [What the evidence supports](#what-the-evidence-supports)
+- [Results in detail](#results-in-detail)
+- [Defects found during evaluation](#defects-found-during-evaluation)
 - [Limitations and threats to validity](#limitations-and-threats-to-validity)
 - [Reproducing](#reproducing)
 - [Verification methodology](#verification-methodology)
@@ -27,146 +30,166 @@ originally proposed as the contribution — does not.**
 
 ---
 
-## Summary of findings
+## Headline results
 
-| Claim | Verdict | Evidence |
+**48 Körkel-Ghosh instances, six sizes, 32 restarts per randomized arm, 30-minute exact-solve
+attempt on every instance.** Gaps are true optimality gaps where CBC closed the instance and
+gaps against the LP bound otherwise; the per-size table says which.
+
+| Size | Instances | Optima proven | A+ · rounding + search | D · no LP | **B · MS-LP-GRASP** | C · α-GRASP |
+|---|---|---|---|---|---|---|
+| 100×100 | 12 | **12 / 12** | 0.1129% | 0.0920% | **0.0000%** | 0.0030% |
+| 150×150 | 6 | **6 / 6** | 0.0460% | 0.1510% | **0.0000%** | 0.0000% |
+| 200×200 | 6 | 4 / 6 | 0.4786% | 0.4865% | **0.3625%** | 0.3667% |
+| 250×250 | 12 | 1 / 12 | 1.2522% | 1.3034% | **1.2030%** | 1.2053% |
+| 500×500 | 6 | 0 / 6 | 1.5099% | 1.5532% | **1.4173%** | 1.4180% |
+| 750×750 | 6 | 0 / 6 | 1.3425% | 1.3836% | **1.2386%** | 1.2416% |
+
+Three findings, in descending order of how well the evidence supports them.
+
+### 1. Multistart is the contribution. It is large, and it holds at every size.
+
+Arm **B** and arm **A+** use the *same* LP-biased construction and the *same* local search.
+They differ only in whether it runs once or 32 times.
+
+**B beats A+ on 31 of 48 instances and loses on 2.** The margin is positive at every single
+size: `+0.1129`, `+0.0460`, `+0.1161`, `+0.0492`, `+0.0927`, `+0.1039` percentage points.
+
+This repository previously carried the opposite conclusion — that the randomized construction
+contributed nothing. That was correct *of the code as it then stood*, which performed one
+construction and one local search. Randomization had no mechanism through which to pay off.
+Adding the restart loop reverses the finding.
+
+### 2. The LP bias does **not** beat a classical GRASP at the sizes that matter.
+
+Across all 48 instances B beats C on 9, loses on 6, and **ties on 33**. Split by size, the
+picture is unambiguous:
+
+| | B beats C | C beats B |
 |---|---|---|
-| The LP relaxation carries useful information | **Supported** | On Körkel-Ghosh, an LP-seeded search reaches 0.045% mean excess vs 0.115% for an identical search seeded without the LP |
-| Local search is necessary | **Supported** | Rounding the LP and stopping gives 1.03% (California) and 16.87% (Körkel-Ghosh); adding local search gives 0.04% and 0.045% |
-| The randomized construction improves quality | **Not supported** | Deterministic rounding matches or beats it on both families; on California both reach the *identical* solution |
-| The method is a GRASP | **Not supported** | There is no multistart loop anywhere in the codebase |
-| Gaps reported are optimality gaps | **Only on cap134** | Elsewhere gaps are measured against the LP bound, which is a lower bound, not a proven optimum |
+| 100 / 150 / 200 | **3** | 0 |
+| 250 / 500 / 750 (official KG sizes) | 6 | **6** |
 
-The single most consequential measurement in this repository is the ablation in
-[Randomization: the ablation](#randomization-the-ablation). Everything else is context for it.
+Every win is on the smaller instances. At the library's real sizes it is a dead heat, and the
+mean gaps differ by 0.0023 / 0.0007 / 0.0030 pp — differences far below anything that would
+survive a change of seed. **The report says so in its own generated words:**
+
+> *"But those wins are **concentrated on the smaller instances**: B leads 3–0 on the smallest
+> 3 sizes (100, 150, 200) and only 6–6 on the largest 3 (250, 500, 750). On this evidence the
+> advantage **does not persist** at the sizes the family exists to test."*
+
+### 3. Where the LP bias *does* pay: per-restart reliability, not best-of-N.
+
+Comparing the arms restart-by-restart rather than best-of-32 reverses the verdict:
+
+| Size | B mean per-restart gap | C mean per-restart gap | B better on |
+|---|---|---|---|
+| 100×100 | **1.3596%** | 1.4052% | 8 / 12 |
+| 150×150 | **1.2680%** | 1.3041% | 5 / 6 |
+| 200×200 | **1.5556%** | 1.5764% | 6 / 6 |
+| 250×250 | **1.5598%** | 1.5772% | 8 / 12 |
+| 500×500 | **1.4905%** | 1.5188% | 6 / 6 |
+| 750×750 | **1.3269%** | 1.3419% | 6 / 6 |
+
+**B's average restart is better than C's at every size, on 39 of 48 instances.** Taking the
+best of 32 washes that advantage out — enough independent draws let the savings-based
+construction find an equally good solution eventually.
+
+The practical consequence shows up clearly on California (2000×2000, 10 restarts), where both
+arms reach 0.0358%:
+
+- B reaches its best at **restart 2**; C at **restart 4**.
+- **B's *worst* restart (0.0421%) is better than C's *mean* restart (0.1618%)** — an order of
+  magnitude less spread.
+- B takes 2099 s against C's 3628 s: **1.73× faster**, despite paying 126 s for the LP solve.
+
+So the LP bias buys **variance reduction and time-to-good-solution**, not a better asymptote.
+That matters when the restart budget is small. It stops mattering when it is large.
 
 ---
 
-## A note on naming
+## What the evidence supports — and what it does not
 
-This repository was originally titled *"Hybrid LP-GRASP"*, after Resende & Werneck's
-hybrid multistart heuristic. That name does not describe what is implemented here, for
-two independent reasons:
+**Supported.**
+- Multistart substantially improves the LP-biased heuristic at every size tested (31–2–15 over 48).
+- LP-biased construction produces more reliable individual restarts than savings-based α-GRASP
+  (39 of 48 instances), and reaches a good solution in fewer restarts and less wall-clock.
+- The LP relaxation on Körkel-Ghosh is genuinely weak — 22–28% of facilities fractional,
+  measured duality gaps of 1.19–3.01% where an optimum was proven — so this is a real test of a
+  method premised on the relaxation carrying information.
 
-1. **GRASP is a multistart procedure.** Its randomization exists so that repeated
-   restarts explore different basins and the best result is kept. This codebase performs
-   **one** construction followed by **one** local search. `grep -rn "multistart"` returns
-   only the bibliography entry. With a single start, randomization has no mechanism
-   through which to pay off.
-2. **The randomization measurably contributes nothing.** See the ablation below.
+**Not supported.**
+- That LP-biased construction beats a classical GRASP on final solution quality. At the
+  library's official sizes it does not (6–6).
+- That the LP relaxation is worth its cost as a *seed*. Comparing A+ against D isolates exactly
+  that, and the result is inconsistent across sizes: `−0.0209`, `+0.1050`, `+0.0079`, `+0.0512`,
+  `+0.0432`, `+0.0411` pp. It is **negative at 100×100**. The generated report refuses to
+  summarise it: *"The LP advantage is **not consistent across sizes** … Reporting a single
+  headline number for it would misrepresent the evidence."*
+- Anything at all about instances larger than 750×750 on this family, or about the official
+  UflLib files (see [Limitations](#limitations-and-threats-to-validity)).
 
-Accordingly, this README names the implemented method by what it does:
-
-> **LP-XLS — LP-Seeded Exact-Delta Local Search**
-
-with two seeding policies:
-
-| Policy | Name | Construction rule |
-|---|---|---|
-| Deterministic | **LP-XLS/R** | open every facility with `y_f ≥ 0.5` (threshold rounding) |
-| Stochastic | **LP-XLS/S** | open facility `f` with probability `max(y_f, ε)`, `ε = 0.01` |
-
-`LP-XLS/S` is the configuration the project originally proposed. `LP-XLS/R` is the
-ablation that removes its randomness and changes nothing else. This is not a claim of
-novelty — LP rounding followed by local search is long-established. The name is used
-here only so that the two configurations can be discussed without ambiguity.
+**A negative result worth stating plainly:** on the near-integral California instance
+(7 of 2000 facilities fractional, 0.35%), arm D — a local search that never reads the LP —
+reaches **exactly** the same 0.0421% as the full LP-rounding-plus-search pipeline, and on
+cap134 every one of the five arms reaches the proven optimum. On easy instances the LP machinery
+buys nothing but time.
 
 ---
 
 ## The problem
 
-Given a set of candidate facilities `F`, a set of customers `U`, a setup cost `c_f` for
-opening facility `f`, and a service cost `d_uf` for serving customer `u` from facility
-`f`, choose a non-empty subset `S ⊆ F` minimising
+Given facilities `F` with setup costs `c_f`, customers `U` with service costs `d_uf`, choose
+`S ⊆ F, S ≠ ∅` minimising
 
 ```
-cost(S) = Σ_{f ∈ S} c_f  +  Σ_{u ∈ U} min_{f ∈ S} d_uf
+cost(S) = Σ_{f∈S} c_f  +  Σ_{u∈U} min_{f∈S} d_uf
 ```
 
-Every customer is served by exactly one open facility and facilities have no capacity
-limit. The problem is NP-hard.
-
-The solver uses the **strong formulation** of the LP relaxation:
-
-```
-minimise    Σ_f c_f · y_f  +  Σ_u Σ_f d_uf · x_uf
-subject to  Σ_f x_uf = 1            for every customer u
-            x_uf ≤ y_f              for every (u, f)
-            0 ≤ x, y ≤ 1
-```
-
-The `x_uf ≤ y_f` linking constraints (rather than the aggregated
-`Σ_u x_uf ≤ |U| · y_f`) are what make this relaxation tight. That tightness is central
-to every result below: it is why the heuristic layer has so little left to do on most
-instance families.
-
-At 2000×2000 this model has 4,002,000 variables and 4,002,000 constraint rows, of which
-4,000,000 are linking constraints. Model size, not variable count, is the scaling
-bottleneck.
-
----
+Every customer is served by its cheapest open facility; there are no capacities. The strong
+formulation used throughout disaggregates the linking constraints as `x_uf ≤ y_f`, which is what
+makes the relaxation tight enough to be informative on Euclidean instances — and conspicuously
+weak on Körkel-Ghosh.
 
 ## The method
 
 ### Pipeline
 
-```
-   ┌─────────────────────────────────────────────────────────────┐
-   │  Phase 1 — LP relaxation                                    │
-   │  SciPy linprog / HiGHS on the strong formulation            │
-   │  → fractional y_f ∈ [0,1], and a valid lower bound          │
-   └───────────────────────────┬─────────────────────────────────┘
-                               │
-   ┌───────────────────────────▼─────────────────────────────────┐
-   │  Phase 2 — Seeding             LP-XLS/R:  y_f ≥ 0.5         │
-   │                                LP-XLS/S:  p = max(y_f, ε)   │
-   │  → initial open set S₀ (falls back to one facility if empty)│
-   └───────────────────────────┬─────────────────────────────────┘
-                               │
-   ┌───────────────────────────▼─────────────────────────────────┐
-   │  Phase 3 — Best-improvement local search                    │
-   │  moves: insert f, delete f, swap (f_in, f_out)              │
-   │  profit via EXACT O(1) deltas (save / loss / extra)         │
-   │  → local optimum                                            │
-   └─────────────────────────────────────────────────────────────┘
-```
+1. **LP relaxation** (`solve_lp_relaxation`) — `y_f ∈ [0,1]`, solved with SciPy/HiGHS. Returns
+   the fractional `y` vector as per-facility opening probabilities.
+2. **Probabilistic construction** (`construct_solution`) — open each facility independently with
+   probability `max(y_f, ε)`, `ε = 0.01`. Falls back to the single cheapest facility if none open.
+3. **Best-improvement local search** (`local_search`) — insertions, deletions and swaps, with
+   move profit from **exact** delta formulas rather than incremental bookkeeping.
+4. **Multistart** (`multistart.py`) — repeat 2–3 over `N` seeds, keep the best. This is the step
+   that makes it a GRASP, and the step that turned out to matter.
+
+### The five arms
+
+| Arm | Construction | Reads LP? | Randomized? | Restarts |
+|---|---|---|---|---|
+| A | open every `y_f ≥ 0.5`, no search | yes | no | 1 |
+| A+ | A, then local search | yes | no | 1 |
+| D | cheapest facility, then local search | **no** | no | 1 |
+| **B · MS-LP-GRASP** | sample `p = max(y_f, ε)` | yes | yes | N |
+| C · α-GRASP | savings-based RCL, α = 0.2 | no | yes | N |
+
+The design is what makes the conclusions attributable:
+
+- **A+ vs B** differ *only* in deterministic rounding versus sampling → isolates **randomization**.
+- **A+ vs D** differ *only* in whether the start is LP-seeded → isolates **the LP**.
+- **B vs C** differ *only* in how each restart is built → isolates **the LP bias itself**.
+
+Deterministic arms run once, because restarting a deterministic construction reproduces the
+same solution.
 
 ### Exact delta evaluation
 
-Move profits use the `save` / `loss` / `extra` structures of Resende & Werneck. With
-`φ₁(u)` and `φ₂(u)` the closest and second-closest open facilities to customer `u`:
-
-```
-save[f_i]        = −c_{f_i} + Σ_u max(0, d(u,φ₁(u)) − d(u,f_i))
-loss[f_r]        = −c_{f_r} + Σ_{u: φ₁(u)=f_r} (d(u,φ₂(u)) − d(u,f_r))
-extra[f_i,f_r]   = Σ_{u: φ₁(u)=f_r, d(u,f_i)<d(u,φ₂(u))}
-                     (d(u,φ₂(u)) − d(u,f_i)) − max(0, d(u,f_r) − d(u,f_i))
-
-profit(insert f_i)        =  save[f_i]
-profit(delete f_r)        = −loss[f_r]
-profit(swap f_i ← f_r)    =  save[f_i] − loss[f_r] + extra[f_i,f_r]
-```
-
-**These formulas are verified exact, not approximate.** Every one is cross-validated
-against from-scratch recomputation over *every non-empty subset* of small instances —
-Euclidean, non-Euclidean, and integer-valued with deliberate ties in `φ₁`/`φ₂` —
-across roughly 400 instances with zero mismatches
-(`tests/unit/test_delta_exactness.py`).
-
-The source comments flag the `extra` correction as possibly incomplete. It is not: the
-branch it skips contributes exactly zero, because `d(u,f_r) ≤ d(u,φ₂(u))` holds whenever
-`φ₁(u) = f_r`.
-
-### Complexity and a deliberate trade-off
-
-`_apply_move_and_recompute` rebuilds the closest/second-closest assignments and the
-auxiliary structures from scratch after **every** accepted move, rather than maintaining
-them incrementally. Rebuilding `extra` costs `O(|F_closed| · |F_open| · |U|)` per
-iteration and dominates runtime.
-
-This is correctness-first by design: it removes any possibility of numerical drift
-across iterations, at a substantial constant-factor cost. It is the main reason
-wall-clock times here are not comparable with tuned implementations in the literature.
+`save`/`loss`/`extra` are maintained per Resende–Werneck, but acceptance always uses the exact
+delta formulas — the auxiliary structures are informational. `_apply_move_and_recompute` fully
+recomputes closest/second-closest assignments after every move, so the implementation is
+correctness-first rather than maximally fast. The exactness is not assumed: a test brute-forces
+every subset of ~400 random instances and checks each predicted delta against the true cost change.
 
 ---
 
@@ -174,260 +197,136 @@ wall-clock times here are not comparable with tuned implementations in the liter
 
 ```
 scripts/
-├── uflp_solver.py                 Canonical solver. Data structures, instance I/O,
-│                                  LP relaxation, construction, local search,
-│                                  exact delta formulas, CLI.
-├── run_experiments.py             cap134 benchmark (20 seeds) + the 10-instance
-│                                  LP-duality-gap correlation suite, with exact IP
-│                                  optima from CBC as ground truth.
-├── run_scaling_benchmark.py       Size sweep, 600 → 200,000 variables.
-├── download_and_run_real_world.py California Housing benchmark; four arms, three
-│                                  seeds; writes the report and a JSON sidecar.
-├── koerkel_ghosh.py               Körkel-Ghosh instance generator (to published spec).
-└── run_koerkel_ghosh.py           Körkel-Ghosh benchmark; five arms.
-
-data/
-└── cap134.txt                     OR-Library (Beasley) instance.
-
-output/                            All generated artifacts. Never hand-edited.
-├── california_4M_results.{md,json}
-├── koerkel_ghosh_results.{md,json}
-├── cap134.{md,png}
-└── scaling_results.md, scaling_analysis.png
-
+  uflp_solver.py              canonical solver: data structures, I/O, LP, construction, local search
+  multistart.py               the restart loop; fairness accessors (restarts/seconds to reach a target)
+  reference.py                what a gap is measured against; proven optimum vs LP bound
+  koerkel_ghosh.py            generator for the hard benchmark family, to published spec
+  run_koerkel_ghosh.py        the five arms over one KG size; checkpointing; --from-json re-render
+  run_full_study.py           the whole size ladder + California; cross-size analysis
+  run_cap134.py               OR-Library control instance
+  download_and_run_real_world.py   California Housing 2000×2000
+  run_experiments.py          cap134 + LP duality-gap correlation suite
+  run_scaling_benchmark.py    wall-clock scaling sweep
 tests/
-├── unit/                          10 files — invariants, exact deltas, LP correctness,
-│                                  construction, report rendering.
-└── regression/                    5 files — one per fixed defect, each proven to fail
-                                   on the pre-fix code.
+  unit/                       boundaries, invariants, exact deltas, report narrative
+  regression/                 one file per fixed defect, each proven red before the fix
+output/                       every generated artifact (never hand-edited)
 ```
-
-Entry points import one another as `scripts.<module>`, so run them as modules from the
-repository root (`python -m scripts.uflp_solver`), not as files.
 
 ### Reports are generated, never written
 
-Every figure in every results file is a measured value carried in a typed record
-(`LPProfile`, `ArmResult`), and **every comparative phrase** — "lower", "faster",
-"tighter", "earns its keep" — is *computed* from those values rather than written into
-a template. A report therefore cannot state a conclusion its own table contradicts.
+Every figure in a results file is a measured value carried in a typed record, and every
+comparative phrase — "lower", "faster", "indistinguishable", "widens" — is **computed from those
+values**, so a report cannot state a conclusion its own table contradicts. Regression suites
+enforce it by feeding the renderers mirror-image datasets and requiring the wording to flip, and
+by scanning generator source for hardcoded verdicts.
 
-This is enforced, not merely intended. Two regression suites feed the renderers
-mirror-image datasets and require the wording to flip, and scan the generator sources
-for hardcoded comparative verdicts. This discipline exists because an earlier revision
-of this project failed exactly that way: its template asserted *"LP-biased starts
-lower"* unconditionally while the run it described produced the opposite, and the
-published results file was subsequently overwritten by a script containing hardcoded
-numeric literals.
+This is not a stylistic preference. Three separate defects in this repository were reports
+asserting things their own tables denied; see [Defects found](#defects-found-during-evaluation).
 
 ---
 
 ## Datasets
 
-| Family | Size | Source | LP fractionality | Purpose |
-|---|---|---|---|---|
-| **cap134** | 50×50 | OR-Library (Beasley) | **0** (integral) | Classical reference; LP bound *equals* the IP optimum |
-| **Duality-gap suite** | 50×50 ×10 | Generated | 0 → 15/50 | Interpolates Euclidean (k=1) → random (k=10) to vary the duality gap |
-| **Scaling sweep** | 20×30 → 250×800 | Generated Euclidean | low | Wall-clock scaling, 600 → 200,000 variables |
-| **California Housing** | 2000×2000 | scikit-learn census blocks | **7 / 2000** (0.35%) | Real geographic coordinates and block populations |
-| **Körkel-Ghosh** | 250×250 ×18 | Generated to published spec | **15–40%** | The standard *hard* family; deliberately weak LP |
+### Körkel-Ghosh — the decisive benchmark
 
-### California Housing instance
+The standard hard family. Allocation costs are drawn uniformly from `[1000, 2000]` rather than
+from a metric embedding, which destroys the structure that makes the relaxation tight. Setup
+costs by class: **a** `[100,200]`, **b** `[1000,2000]`, **c** `[10000,20000]`. Symmetric (`gs`)
+and asymmetric (`ga`) variants; official sizes 250, 500 and 750.
 
-Facilities and customers are two **disjoint** random samples of census blocks
-(`np.random.seed(42)`). Setup cost is `5000 × (population / median population) + 1000`.
-Service cost is Euclidean distance between (latitude, longitude) pairs, converted at
-111 km/degree and priced at 10 per km.
+Measured LP fractionality: **22.3–28.1%** of facilities, against 0.35% on California and 0% on
+cap134. This is the family where an LP-guided method has something to prove.
 
-> **Known approximation.** Longitude degrees are converted with the same 111 km factor
-> as latitude degrees. At Californian latitudes (~37°N) a longitude degree is closer to
-> 88 km, so east–west separation is overstated by roughly 26%. The instance is
-> geographically *derived*, not geographically *accurate*. A unit test pins this so it
-> cannot drift silently.
+> **Generated to specification, not the official UflLib files** — those archives returned HTTP 403
+> from this environment. The generator follows the published spec exactly, but the random draws
+> differ, so **objective values are not comparable with published KG results**. Arm-versus-arm
+> comparison, which is what this study measures, is unaffected.
 
-### Körkel-Ghosh instances
+### California Housing — 2000×2000, real-world geography
 
-Generated to the specification quoted in Karapetyan & Goldengorin (arXiv:1711.06347):
-fixed costs `U[100,200]` (class A), `U[1000,2000]` (B), `U[10000,20000]` (C);
-allocation costs always `U[1000,2000]`; symmetric variants satisfy `c_ij = c_ji`.
+Block-group centroids from the California Housing dataset; service cost is great-circle distance
+× 10/km, setup cost scaled by local density. Four million service-cost entries. The integer
+program is not attempted at this size — four million binary-linked assignment variables.
 
-> **These are generated-to-spec instances, not the official UflLib files.** The official
-> archives were unreachable from the build environment (HTTP 403 from
-> `resources.mpi-inf.mpg.de`; redirect loop from the Frankfurt mirror). The generator
-> follows the published specification exactly, but the random draws differ, so
-> **objective values here are not comparable with published Körkel-Ghosh results** and
-> literature best-known bounds do not apply. Arm-versus-arm comparison, which is what
-> this benchmark exists for, is unaffected.
+### OR-Library cap134 — the control
+
+Beasley's 50×50 instance, included *because* it is easy: its LP relaxation is integral, so the
+bound equals the optimum (928,941.75) and all five arms find it. A method that looked good here
+and nowhere else would be suspect.
 
 ---
 
-## Results
+## Results in detail
 
-Gaps are measured against the **LP bound** unless stated otherwise. On every family
-except cap134 the LP bound is strictly below the integer optimum, so these figures
-**overstate** the true optimality gap by an unknown amount.
+Full generated reports:
 
-### cap134 — the classical reference
-
-| | LP-XLS/S | α-GRASP baseline |
-|---|---|---|
-| Optimal solutions found | **20 / 20** | **20 / 20** |
-| Mean initial gap | 0.5180% | 1.9988% |
-| Mean local-search iterations | 0.35 | 2.45 |
-| Mean solve time | 30.81 ms | **10.96 ms** |
-
-The LP bound equals the IP optimum exactly (928,941.75, duality gap 0.0000%). Both
-methods find the optimum on every seed. **The LP-seeded method is ~3× slower for
-identical quality**, because it pays for an LP solve that tells it nothing the baseline
-could not reach on its own.
-
-### Duality-gap suite — quality is not the issue, the ε floor is
-
-As instances move from Euclidean (k=1) to random (k=10), the duality gap grows from
-0.0000% to 9.5238% and fractional facilities from 0/50 to 15/50. Over the same range the
-LP-XLS/S **initial** gap grows from 4.86% to 27.51%, while the α-GRASP initial gap stays
-between roughly 1% and 7%.
-
-This is not caused by fractionality. It is the `ε = 0.01` floor: every facility the LP
-zeroes still gets a 1% chance of opening, so the expected number of spurious openings
-grows linearly with `|F|`. The local search then spends its iterations deleting them.
-
-### California Housing — 2000×2000
-
-LP bound 397,600.48; LP solve 164.24 s; **7 of 2000** facilities fractional (99.65%
-integral); `Σy = 57.50`; 61 facilities at `y ≥ 0.5`. Three seeds (42, 7, 2024).
-
-| Arm | Final gap | LS iterations | End-to-end |
-|---|---|---|---|
-| A · LP rounding only | 1.0328% | 0 | 177.0 s |
-| **A+ · LP-XLS/R** (deterministic) | **0.0421%** | **5** | 221.6 s |
-| B · LP-XLS/S (randomized) | 0.0421% | 20.3 | 373.9 s |
-| C · α-GRASP baseline | 0.1900% | 34.7 | 393.8 s |
-
-LP-XLS/S reached the **identical solution on all three seeds** — the same 58 facilities
-at 397,767.9731, from starting points whose gaps ranged 21.91% to 40.64%. The α-GRASP
-baseline produced three different solutions spanning 0.3022 percentage points, and
-matched that solution on one seed in three.
-
-Local-search move mix for LP-XLS/S: **89% deletions, zero insertions**. The search is
-not refining a good configuration; it is removing the ~15 facilities the ε floor opened
-against the LP's advice.
-
-### Körkel-Ghosh — where the LP is genuinely weak
-
-18 instances at 250×250 (classes a/b/c × symmetric/asymmetric × 3), five seeds.
-Mean fractionality 27%, mean duality gap 1.50%. Excess is percent above the best
-solution any arm found on that instance.
-
-| Arm | Mean excess |
+| Artifact | What it covers |
 |---|---|
-| A · LP rounding only | 16.868% |
-| **A+ · LP-XLS/R** (deterministic) | **0.045%** |
-| B · LP-XLS/S (randomized) | 0.078% |
-| C · α-GRASP baseline | 0.089% |
-| D · Local search only, **no LP** | 0.115% |
+| [`output/full_study.md`](output/full_study.md) | The six-rung ladder + California; hardness vs provability |
+| [`output/kg{100,150,200,250,500,750}/`](output/) | One report per size, with per-instance detail |
+| [`output/california_4M_results.md`](output/california_4M_results.md) | 2000×2000 real-world instance |
+| [`output/cap134_results.md`](output/cap134_results.md) | The control instance |
 
-By fixed-cost class:
+### Where exact solution stops being possible
 
-| Class | LP fractional | Duality gap | Facilities at `y ≥ 0.5` | A+ | B | C | D |
-|---|---|---|---|---|---|---|---|
-| a (cheap) | 40% | 0.15% | 14.8 | 0.015% | 0.029% | 0.045% | 0.040% |
-| b (medium) | 26% | 1.01% | 0.3 | 0.116% | 0.113% | 0.114% | 0.221% |
-| c (expensive) | 15% | 3.35% | 0.0 | 0.005% | 0.091% | 0.108% | 0.083% |
+This is the other half of the study, and it is why the ladder spans six sizes rather than one.
 
-On **10 of 18** instances, thresholding at `y ≥ 0.5` selects *no facility at all*. On
-classes b and c the deterministic arm therefore starts from a single fallback facility
-and inserts its way up — and still wins. Move mix across all instances: **zero
-deletions, all insertions**, the exact inverse of California.
+| Size | Optima proven (30 min CBC each) | Mean CBC time | Mean duality gap |
+|---|---|---|---|
+| 100×100 | **12 / 12** | 17.4 s | 1.25% |
+| 150×150 | **6 / 6** | 254.9 s | 1.19% |
+| 200×200 | 4 / 6 | 834.1 s | 1.68% |
+| 250×250 | 1 / 12 | 1634.8 s | 3.01% |
+| 500×500 | **0 / 6** | 2214.2 s | — |
+| 750×750 | **0 / 6** | 3867.2 s | — |
+| 2000×2000 | not attempted | — | — |
 
-### Scaling — 600 to 200,000 variables
+Ground truth is available in full only up to **150×150**. It is already almost gone at the
+*smallest official Körkel-Ghosh size*. At 500 and 750 it is gone entirely, and the exact solve is
+not merely slow — a 750×750 model carries 562,500 binary-linked assignment variables and peaked
+at 2.2 GB of solver memory, enough to require swap on a 12 GB machine.
 
-| Size | Variables | LP-XLS/S time | init / final gap | α-GRASP time | init / final gap | LP portion |
-|---|---|---|---|---|---|---|
-| 20×30 | 600 | 0.006 s | 0.00% / 0.0000% | 0.001 s | 1.86% / 0.0000% | 0.006 s |
-| 50×100 | 5,000 | 0.030 s | 3.09% / 0.0000% | 0.014 s | 16.41% / 0.0000% | 0.027 s |
-| 100×200 | 20,000 | 0.125 s | 10.51% / 0.0000% | 0.102 s | 19.56% / 0.1736% | 0.102 s |
-| 150×400 | 60,000 | 0.408 s | 5.10% / 0.0000% | 0.580 s | 15.52% / 0.0627% | 0.324 s |
-| 200×500 | 100,000 | 0.804 s | 7.94% / 0.0000% | 1.562 s | 17.26% / 0.0000% | 0.557 s |
-| 250×800 | 200,000 | 1.908 s | 8.08% / 0.0000% | 4.158 s | 10.86% / 0.0000% | 1.115 s |
-
-The LP-seeded arm is slower below ~20,000 variables and faster above it. At the largest
-size it is 2.2× faster, with the LP solve accounting for 58% of its own runtime.
-
-### Randomization: the ablation
-
-`LP-XLS/R` and `LP-XLS/S` share the LP, the instance, and the local search. They differ
-in exactly one respect — whether the construction is deterministic rounding or
-probabilistic sampling — so any difference between them is attributable to
-randomization and nothing else.
-
-| | California 2000×2000 | Körkel-Ghosh, 18 instances |
-|---|---|---|
-| Final quality | **identical solution** (397,767.97 both) | R better on 13, S better on 4, tied on 1 |
-| Mean excess | — | R 0.045% vs S 0.078% |
-| LS iterations | 5 vs 20.3 (**4.1×**) | — |
-| Heuristic time (excl. shared LP) | 57.4 s vs 209.7 s (**3.7×**) | — |
-
-**On neither family does the randomized construction produce a better solution.** On
-California it produces the same solution after four times the work. On Körkel-Ghosh —
-the family chosen specifically because it is hard for LP-guided methods — the
-deterministic variant wins outright.
-
-The three-seed stability of `LP-XLS/S` on California, which looks like a strength in
-isolation, has a deflationary explanation: the randomness never mattered. The
-deterministic variant reaches that same solution with no seed at all.
+**Small instances give certainty and little difficulty; large ones give difficulty and no
+certainty.** Reporting only one end of that trade-off reports half the result, which is why the
+gaps above 200×200 are labelled as measured against a bound, per instance, in both the tables and
+the JSON.
 
 ---
 
-## What the evidence supports
+## Defects found during evaluation
 
-**The LP relaxation contributes.** Arm D — an identical local search seeded without ever
-reading the relaxation — reaches 0.115% mean excess against 0.045% for the LP-seeded
-arm, and loses in all three Körkel-Ghosh classes. The mechanism is narrower than
-expected: on classes b and c, where thresholding selects nothing, the LP's *entire*
-contribution is the choice of a single seed facility. That facility is **more expensive**
-by immediate cost than the cost-greedy alternative in 12 of 12 cases, yet leads to a
-better local optimum in 6 of them and ties in 5. The relaxation identifies structure a
-greedy cost rule does not.
+The evaluation found more in the harness than in the heuristic. Each has a regression test under
+`tests/regression/`, proven to fail on the pre-fix code.
 
-**Local search is doing the heavy lifting.** Rounding the LP and stopping yields 1.03%
-on California and 16.87% on Körkel-Ghosh. Adding the search yields 0.04% and 0.045%.
-
-**The exact delta formulas are correct**, including the `extra` correction the source
-comments doubted.
-
-**The randomized construction does not contribute.** Two instance families, opposite
-regimes (89% deletions vs 100% insertions), same verdict.
-
-**The method is not a GRASP**, and the `ε` floor is actively harmful at scale — its
-damage grows linearly with `|F|`, from negligible at 50 facilities to ~19 spurious
-openings at 2000.
+| Defect | Consequence |
+|---|---|
+| **An unproven CBC incumbent reported as a proven optimum.** PuLP's `LpStatus` reads `"Optimal"` whenever CBC terminates holding an integer-feasible solution — *including a time-limit stop*. | Reports labelled gaps "true optimality gaps" against values CBC never proved. On `ga250a-1` the "proven optimum" of 257,553 was **beaten by three of the run's own arms**; the winning 257,538 solution was rebuilt and its cost recomputed from first principles to confirm the heuristic was right and the label was wrong. Would have printed *negative* optimality gaps. Fixed by requiring `sol_status == "Optimal Solution Found"`, plus a solver-agnostic guard that demotes any claimed optimum a feasible solution beats. |
+| **A 0.0023 pp difference reported as one arm "beating" another.** The verdict came from a comparison with a 1e-9 tie tolerance. | The 250×250 report printed *"the LP-biased construction beats the classical baseline"* directly beneath *"B beat C on 2, lost on 2, tied on 8"*. Fixed so the verdict is decided by the paired per-instance record; when record and mean disagree the report says so and claims no winner. |
+| **Cross-size trends asserted against the tables.** "The LP bias holds its advantage **as instances grow**" (all wins were on the small rungs); "the margin **widens** … +0.0030 pp … +0.0030 pp" (two equal numbers). | Fixed by splitting the win record at the median size and testing the claim on the larger half, and by deciding trend words from the values *as printed*. |
+| **`forkserver` broke LP probability passing.** Python 3.14 changed the default start method; a module-global dict never reached workers. | Silent wrong-instance results in parallel benchmarks. |
+| **`conftest.py` added the wrong root to `sys.path`.** | mutmut tested *unmutated* code and reported "could not find any test case for any mutant". |
+| **Coverage silently omitted three modules.** `multistart.py`, `reference.py`, `run_cap134.py` were in the `omit` list. | The gate reported 100% while measuring nothing about them. |
+| **A rung wrote its sidecar only at the end.** | A machine reboot 5 h into a 6-instance 750×750 rung discarded all four finished instances. Fixed with per-instance atomic checkpointing that refuses to resume across a changed configuration. |
 
 ---
 
 ## Limitations and threats to validity
 
-- **Gaps are against the LP bound, not proven optima.** Only cap134 has a verified
-  integer optimum (where the LP bound attains it). Elsewhere the reported gaps
-  overstate true optimality gaps by an unknown amount. `solve_exact_ip` exists but CBC
-  does not close instances at these sizes.
-- **Körkel-Ghosh instances are generated to spec, not the official files.** Objective
-  values are not comparable with published results.
-- **The no-LP control (arm D) was run on Körkel-Ghosh only.** The California benchmark
-  compares four arms, not five, so "does the LP contribute" is answered for one family.
-- **Seed counts are small** — three on California, five on Körkel-Ghosh. Enough to show
-  a spread, not enough for confidence intervals.
-- **Timings are not portable.** Repeated runs of the same configuration on the same
-  machine differed by tens of percent; the California LP solve alone ranged 67–231 s
-  depending on memory pressure. Compare timings *within* a run only. Cost, gap,
-  iteration and move-mix figures are fully deterministic under the stated seeds.
-- **The local search is correctness-first, not fast.** Full recomputation after every
-  move costs a large constant factor. Wall-clock comparisons against tuned literature
-  implementations would not be meaningful.
-- **A single α (0.2)** was used for the baseline; it was not tuned.
-- **The HiGHS algorithm is not recorded.** `method='highs'` lets the solver choose
-  between simplex and interior point, so LP solve time should not be labelled
-  "simplex time".
+1. **Generated instances, not official UflLib files.** Objective values are not comparable with
+   published Körkel-Ghosh results. Arm-versus-arm comparison is unaffected.
+2. **Most large-instance gaps are against the LP bound, not a proven optimum**, and therefore
+   overstate the true optimality gap by an unknown amount. Every table labels which is which.
+3. **Single α.** The classical baseline uses α = 0.2 throughout. A tuned or reactive α might
+   perform differently.
+4. **Equal restarts, not equal time.** B and C each get 32 restarts, but B additionally pays for
+   the LP solve — 217 s at 750×750. Given equal *wall-clock*, C would get roughly 1.4× more
+   restarts at that size. The per-restart reliability advantage in finding 3 is real; the
+   best-of-N comparison is favourable to B in a way equal-time budgeting would erode.
+5. **One machine, one solver.** CBC, not Gurobi or CPLEX. A stronger solver would push the
+   provability frontier up; it would not change the arm comparison.
+6. **Instance counts are small at the large sizes** — 6 instances at 500 and 750. A 6–6 split is
+   consistent with "no difference" but is not a tight bound on the difference.
 
 ---
 
@@ -436,56 +335,43 @@ openings at 2000.
 ```bash
 pip install -r requirements.txt
 
-# Solve a single instance
+# One instance
 python -m scripts.uflp_solver --file data/cap134.txt
-python -m scripts.uflp_solver --n-facilities 25 --n-customers 40 --seed 7
 
-# Benchmarks (run from the repository root)
-python -m scripts.run_experiments          # cap134 + duality-gap suite   (~1 min)
-python -m scripts.run_scaling_benchmark    # size sweep                   (~1 min)
-python -m scripts.run_koerkel_ghosh        # hard family, 18 instances    (~2 min)
-python -m scripts.download_and_run_real_world   # California 2000x2000    (~35 min, ~8 GB RAM)
+# The full six-rung ladder + California  (~30 h; checkpoints and reuses finished rungs)
+python -m scripts.run_full_study
 
-# Re-render a report from its measurement sidecar, without re-running the benchmark
+# A single size
+python -m scripts.run_koerkel_ghosh --size 250 --instances 2 --restarts 32
+
+# Re-render prose from measurements, running no benchmark
+python -m scripts.run_koerkel_ghosh --from-json output/kg250/koerkel_ghosh_results.json --out-dir output/kg250
+python -m scripts.run_full_study --from-stages --sizes 100 150 200 250 500 750
 python -m scripts.download_and_run_real_world --from-json output/california_4M_results.json
 ```
 
-Requires Python 3.11+ (developed on 3.14), SciPy, NumPy, scikit-learn, PuLP, matplotlib.
-
----
+Run everything from the repository root; scripts resolve paths relative to the working directory.
 
 ## Verification methodology
 
-| Layer | Tool | Status |
+| Layer | Gate | Status |
 |---|---|---|
-| Unit tests and invariants | `pytest tests/unit` | **208 passing** |
-| Line coverage | `pytest --cov` | **100%** |
-| Mutation testing (core algorithm) | `mutmut run` | **92%** — gate is 85% |
-| Mutation testing (whole module) | `mutmut run` | 76% — survivors concentrate in CLI print formatting |
-| Regression tests | `pytest tests/regression` | **49**, each proven to fail on the pre-fix code |
-| Static analysis | `sonar-scanner` | not run (requires a server) |
+| Unit tests & invariants | 100% pass, zero hollow assertions | 376 passing |
+| Coverage | ≥ 85% line coverage | **100%** across all 9 measured modules |
+| Mutation testing | ≥ 85% on changed logic | `mutmut run` over solver, reference and multistart |
+| Regression contract | one test per defect, proven red first | 8 regression suites |
 
-Each regression test carries a documented defect context, is verified RED against the
-pre-fix code before being accepted, and includes a counterweight case asserting the fix
-did not overshoot. Defects caught and fixed during this work included a worker-process
-bug that silently degraded the LP-seeded arm into uniform random sampling under Python
-3.14's `forkserver` default, a benchmark that pointed at a non-existent directory, a
-missing-validation path that returned a wrong answer for customer-free instances, and
-two report generators whose prose contradicted their own tables.
-
----
+Every bug fix carries a dedicated regression test that was **run against the pre-fix code and
+observed to fail for the expected reason**, documents the defect, and includes a counterweight
+case asserting the fix did not overshoot.
 
 ## References
 
-- Resende, M. G. C. & Werneck, R. F. (2006). *A hybrid multistart heuristic for the
-  uncapacitated facility location problem.* European Journal of Operational Research,
-  174(1), 54–68. — source of the `save`/`loss`/`extra` delta formulation.
-- Ghosh, D. (2003). *Neighborhood search heuristics for the uncapacitated facility
-  location problem.* European Journal of Operational Research, 150(1), 150–162.
-- Karapetyan, D. & Goldengorin, B. (2017). *Conditional Markov Chain Search for the
-  Simple Plant Location Problem improves upper bounds on twelve Körkel-Ghosh instances.*
-  [arXiv:1711.06347](https://arxiv.org/abs/1711.06347) — source of the Körkel-Ghosh
-  generation specification used here.
-- Beasley, J. E. *OR-Library.* — `cap134` instance.
-- [UflLib](https://resources.mpi-inf.mpg.de/departments/d1/projects/benchmarks/UflLib/)
-  — canonical home of the Körkel-Ghosh benchmark set.
+- Resende, M. G. C., & Werneck, R. F. (2006). *A hybrid multistart heuristic for the
+  uncapacitated facility location problem.* European Journal of Operational Research, 174(1), 54–68.
+- Körkel, M. (1989). *On the exact solution of large-scale simple plant location problems.*
+  European Journal of Operational Research, 39(2), 157–173.
+- Ghosh, D. (2003). *Neighborhood search heuristics for the uncapacitated facility location
+  problem.* European Journal of Operational Research, 150(1), 150–162.
+- Beasley, J. E. (1990). *OR-Library: distributing test problems by electronic mail.*
+  Journal of the Operational Research Society, 41(11), 1069–1072.

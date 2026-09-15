@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-09-12 04:40 UTC",
+  "generated_at": "2026-09-14 08:58 UTC",
   "generated_by": "download_and_run_real_world.py::render_report",
-  "git_commit": "f7fbf89",
+  "git_commit": "ae61a4e (working tree modified)",
   "environment": {
     "python": "3.14.6",
     "numpy": "2.5.3",
@@ -20,14 +20,21 @@
     "cost_per_km": 10.0
   },
   "seeds": [
-    42,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
     7,
-    2024
+    8,
+    9,
+    10
   ],
   "construction_eps": 0.01,
   "lp_profile": {
     "bound": 397600.4830654799,
-    "solve_seconds": 164.24392548300057,
+    "solve_seconds": 125.94965043100092,
     "n_facilities": 2000,
     "n_integral_open": 54,
     "n_fractional": 7,
@@ -35,6 +42,15 @@
     "sum_y": 57.5,
     "rounded_open_count": 61
   },
+  "reference": {
+    "value": 397600.4830654799,
+    "lp_bound": 397600.4830654799,
+    "proven": false,
+    "ip_status": "not attempted",
+    "ip_seconds": 0.0,
+    "incumbent": null
+  },
+  "alpha": 0.2,
   "arms": {
     "lp_rounding_control": {
       "method": "LP rounding (control)",
@@ -51,9 +67,9 @@
         "delete": 0,
         "swap": 0
       },
-      "construct_seconds": 12.76441640899975,
+      "construct_seconds": 7.66573390999838,
       "search_seconds": 0.0,
-      "lp_seconds": 164.24392548300057
+      "lp_seconds": 125.94965043100092
     },
     "lp_rounding_plus_search": {
       "method": "LP rounding + local search (deterministic ablation)",
@@ -70,128 +86,157 @@
         "delete": 3,
         "swap": 2
       },
-      "construct_seconds": 8.083212927999739,
-      "search_seconds": 49.28286083100011,
-      "lp_seconds": 164.24392548300057
+      "construct_seconds": 7.634464686001593,
+      "search_seconds": 36.92607304899866,
+      "lp_seconds": 125.94965043100092
     },
-    "lp_biased": [
-      {
-        "method": "LP-biased hybrid GRASP",
-        "seed": 42,
-        "initial_cost": 533580.058057159,
-        "initial_gap": 34.2000527623315,
-        "initial_open": 75,
-        "final_cost": 397767.9731057731,
-        "final_gap": 0.04212521046298947,
-        "final_open": 58,
-        "iterations": 20,
-        "moves": {
-          "insert": 0,
-          "delete": 17,
-          "swap": 3
-        },
-        "construct_seconds": 9.02749583900004,
-        "search_seconds": 253.5926300659994,
-        "lp_seconds": 164.24392548300057
+    "local_search_only": {
+      "method": "Local search only (no LP)",
+      "seed": null,
+      "initial_cost": 5706703.2214602865,
+      "initial_gap": 1335.285786742986,
+      "initial_open": 1,
+      "final_cost": 397767.9731057731,
+      "final_gap": 0.04212521046298947,
+      "final_open": 58,
+      "iterations": 73,
+      "moves": {
+        "insert": 57,
+        "delete": 0,
+        "swap": 16
       },
-      {
-        "method": "LP-biased hybrid GRASP",
-        "seed": 7,
-        "initial_cost": 559185.374805791,
-        "initial_gap": 40.64001393924364,
-        "initial_open": 84,
-        "final_cost": 397767.9731057731,
-        "final_gap": 0.04212521046298947,
-        "final_open": 58,
-        "iterations": 27,
-        "moves": {
-          "insert": 0,
-          "delete": 26,
-          "swap": 1
-        },
-        "construct_seconds": 9.842638497000735,
-        "search_seconds": 232.78582010799983,
-        "lp_seconds": 164.24392548300057
+      "construct_seconds": 4.317289794998942,
+      "search_seconds": 417.76034145499943,
+      "lp_seconds": 0.0
+    },
+    "lp_biased_multistart": {
+      "method": "LP-biased multistart",
+      "seeds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "best_cost": 397742.7697667309,
+      "best_gap": 0.035786350196049206,
+      "best_open": 58,
+      "best_found_at": 2,
+      "trajectory": [
+        0.04212521046298947,
+        0.035786350196049206,
+        0.035786350196049206,
+        0.035786350196049206,
+        0.035786350196049206,
+        0.035786350196049206,
+        0.035786350196049206,
+        0.035786350196049206,
+        0.035786350196049206,
+        0.035786350196049206
+      ],
+      "trajectory_costs": [
+        397767.9731057731,
+        397742.7697667309,
+        397742.7697667309,
+        397742.7697667309,
+        397742.7697667309,
+        397742.7697667309,
+        397742.7697667309,
+        397742.7697667309,
+        397742.7697667309,
+        397742.7697667309
+      ],
+      "per_restart_gaps": [
+        0.04212521046298947,
+        0.035786350196049206,
+        0.04212521046298947,
+        0.04212521046298947,
+        0.04212521046298947,
+        0.04212521046298947,
+        0.04212521046298947,
+        0.04212521046298947,
+        0.035786350196049206,
+        0.04212521046298947
+      ],
+      "total_iterations": 237,
+      "moves": {
+        "insert": 0,
+        "delete": 214,
+        "swap": 23
       },
-      {
-        "method": "LP-biased hybrid GRASP",
-        "seed": 2024,
-        "initial_cost": 484716.19300508185,
-        "initial_gap": 21.910363203772835,
-        "initial_open": 69,
-        "final_cost": 397767.9731057731,
-        "final_gap": 0.04212521046298947,
-        "final_open": 58,
-        "iterations": 14,
-        "moves": {
-          "insert": 0,
-          "delete": 11,
-          "swap": 3
-        },
-        "construct_seconds": 9.063820239000052,
-        "search_seconds": 114.64809757500007,
-        "lp_seconds": 164.24392548300057
-      }
-    ],
-    "alpha_grasp": [
-      {
-        "method": "alpha-GRASP baseline (alpha=0.2)",
-        "seed": 42,
-        "initial_cost": 469446.6702627575,
-        "initial_gap": 18.06994464477183,
-        "initial_open": 66,
-        "final_cost": 398969.681115388,
-        "final_gap": 0.3443652883295432,
-        "final_open": 57,
-        "iterations": 36,
-        "moves": {
-          "insert": 0,
-          "delete": 9,
-          "swap": 27
-        },
-        "construct_seconds": 118.9749690640001,
-        "search_seconds": 305.25269257500076,
-        "lp_seconds": 0.0
+      "construct_seconds": 86.38290696100012,
+      "search_seconds": 1886.3845944630011,
+      "lp_seconds": 125.94965043100092
+    },
+    "alpha_grasp_multistart": {
+      "method": "alpha-GRASP multistart (alpha=0.2)",
+      "seeds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "best_cost": 397742.7697667309,
+      "best_gap": 0.035786350196049206,
+      "best_open": 58,
+      "best_found_at": 4,
+      "trajectory": [
+        0.1877173812831083,
+        0.17704093853370767,
+        0.04212521046298947,
+        0.035786350196049206,
+        0.035786350196049206,
+        0.035786350196049206,
+        0.035786350196049206,
+        0.035786350196049206,
+        0.035786350196049206,
+        0.035786350196049206
+      ],
+      "trajectory_costs": [
+        398346.8482802594,
+        398304.3986923136,
+        397767.9731057731,
+        397742.7697667309,
+        397742.7697667309,
+        397742.7697667309,
+        397742.7697667309,
+        397742.7697667309,
+        397742.7697667309,
+        397742.7697667309
+      ],
+      "per_restart_gaps": [
+        0.1877173812831083,
+        0.17704093853370767,
+        0.04212521046298947,
+        0.035786350196049206,
+        0.04212521046298947,
+        0.04212521046298947,
+        0.1833797988006772,
+        0.1833797988006772,
+        0.5409209924706075,
+        0.1833797988006772
+      ],
+      "total_iterations": 335,
+      "moves": {
+        "insert": 1,
+        "delete": 64,
+        "swap": 270
       },
-      {
-        "method": "alpha-GRASP baseline (alpha=0.2)",
-        "seed": 7,
-        "initial_cost": 474498.0195852854,
-        "initial_gap": 19.340403192402917,
-        "initial_open": 64,
-        "final_cost": 398329.6020313559,
-        "final_gap": 0.1833797988006772,
-        "final_open": 59,
-        "iterations": 38,
-        "moves": {
-          "insert": 0,
-          "delete": 5,
-          "swap": 33
-        },
-        "construct_seconds": 106.04705996499979,
-        "search_seconds": 314.6838102359998,
-        "lp_seconds": 0.0
-      },
-      {
-        "method": "alpha-GRASP baseline (alpha=0.2)",
-        "seed": 2024,
-        "initial_cost": 470480.15852942615,
-        "initial_gap": 18.329875985574155,
-        "initial_open": 62,
-        "final_cost": 397767.9731057731,
-        "final_gap": 0.04212521046298947,
-        "final_open": 58,
-        "iterations": 30,
-        "moves": {
-          "insert": 0,
-          "delete": 4,
-          "swap": 26
-        },
-        "construct_seconds": 100.75463323400072,
-        "search_seconds": 235.65782382900034,
-        "lp_seconds": 0.0
-      }
-    ]
+      "construct_seconds": 1109.1557717120013,
+      "search_seconds": 2518.3999281289944,
+      "lp_seconds": 0.0
+    }
   },
-  "wall_seconds": 2052.5661484210004
+  "wall_seconds": 6207.981727111997
 }

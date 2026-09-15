@@ -225,239 +225,127 @@ class TestComparativeHelpers:
 
 # ------------------------------------------------------------ end-to-end ---
 
+
+class TestNoLpControlArm:
+    """
+    Arm D never reads the relaxation. It is what makes "does the LP contribute
+    anything?" answerable on this family, not only on Körkel-Ghosh.
+    """
+
+    def test_it_starts_from_a_single_facility_and_never_reads_the_lp(self, tiny):
+        from scripts.download_and_run_real_world import run_local_search_only
+
+        instance, _probs, lp = tiny
+        result = run_local_search_only(instance, lp.bound)
+
+        assert result.initial_open == 1
+        assert result.lp_seconds == 0.0, "arm D must not be charged for the LP solve"
+        assert result.final_cost <= result.initial_cost + 1e-9
+
+    def test_it_picks_the_cheapest_facility_by_total_cost(self):
+        """Setup plus total service, not setup alone."""
+        from scripts.download_and_run_real_world import run_local_search_only
+
+        instance = UFLPInstance(
+            facilities=[0, 1, 2], customers=[0, 1],
+            setup_costs={0: 100.0, 1: 5.0, 2: 40.0},
+            service_costs={0: {0: 1.0, 1: 60.0, 2: 30.0},
+                           1: {0: 1.0, 1: 60.0, 2: 30.0}},
+        )
+        # Totals: f0 102, f1 125, f2 100 -> f2 is the cheapest overall.
+        result = run_local_search_only(instance, lp_bound=100.0)
+        assert result.initial_cost == pytest.approx(100.0)
+
+    def test_it_is_deterministic(self, tiny):
+        from scripts.download_and_run_real_world import run_local_search_only
+
+        instance, _probs, lp = tiny
+        a = run_local_search_only(instance, lp.bound)
+        b = run_local_search_only(instance, lp.bound)
+        assert a.final_cost == b.final_cost
+        assert a.iterations == b.iterations
+
+
+class TestMultistartArmsAreWiredIn:
+    def test_both_randomized_arms_run_as_multistart(self, tiny):
+        from scripts.multistart import multistart_alpha_grasp, multistart_lp_biased
+
+        instance, probs, lp = tiny
+        b = multistart_lp_biased(instance, probs, lp.bound, [1, 2, 3], lp.solve_seconds)
+        c = multistart_alpha_grasp(instance, lp.bound, [1, 2, 3])
+
+        for arm in (b, c):
+            assert arm.restarts == 3
+            assert len(arm.trajectory) == 3
+            assert arm.best_cost == pytest.approx(min(arm.trajectory_costs))
+            assert arm.best_cost >= lp.bound - 1e-6
+
+    def test_more_restarts_never_worsen_the_best(self, tiny):
+        from scripts.multistart import multistart_lp_biased
+
+        instance, probs, lp = tiny
+        few = multistart_lp_biased(instance, probs, lp.bound, [1, 2])
+        many = multistart_lp_biased(instance, probs, lp.bound, list(range(1, 9)))
+        assert many.best_cost <= few.best_cost + 1e-9
+
+
 class TestMainWritesBothArtifacts:
     def test_main_writes_agreeing_markdown_and_json(self, tmp_path, monkeypatch):
-        """
-        Drive the whole pipeline on a tiny instance and check that the JSON
-        sidecar and the markdown describe the same run. This is what makes the
-        markdown auditable without re-running the benchmark.
-        """
         out = tmp_path / "out"
         monkeypatch.setattr(
             sys, "argv",
-            ["download_and_run_real_world.py", "--size", "20", "--seeds", "42",
+            ["download_and_run_real_world.py", "--size", "20", "--restarts", "3",
              "--out-dir", str(out)],
         )
         main()
 
-        md_path = out / "california_4M_results.md"
-        json_path = out / "california_4M_results.json"
-        assert md_path.exists() and json_path.exists()
+        md = (out / "california_4M_results.md").read_text()
+        payload = json.loads((out / "california_4M_results.json").read_text())
 
-        payload = json.loads(json_path.read_text())
-        md = md_path.read_text()
-
-        assert payload["seeds"] == [42]
+        assert payload["seeds"] == [1, 2, 3]
         assert payload["instance"]["n_facilities"] == 20
-        assert payload["construction_eps"] == CONSTRUCTION_EPS
         assert payload["generated_by"].endswith("render_report")
+        assert set(payload["arms"]) == {
+            "lp_rounding_control", "lp_rounding_plus_search", "local_search_only",
+            "lp_biased_multistart", "alpha_grasp_multistart",
+        }
+        assert set(payload["reference"]) >= {"value", "lp_bound", "proven"}
 
-        # The LP bound printed in the markdown must be the measured one.
         bound = payload["lp_profile"]["bound"]
         assert f"{bound:,.2f}" in md
 
-        # Every arm's final gap must appear in the report.
-        for arm in payload["arms"]["lp_biased"] + payload["arms"]["alpha_grasp"]:
-            assert f"{arm['final_gap']:.4f}%" in md
-        assert f"{payload['arms']['lp_rounding_control']['final_gap']:.4f}%" in md
-
-        # Section skeleton, so a silently truncated report fails loudly.
-        for heading in ("## 1. Instance", "## 2. LP relaxation", "## 3. Methods compared",
-                        "## 4. Results", "## 5. What the construction actually produces",
-                        "## 6. What does the randomized construction contribute?",
-                        "## 7. What the local search actually does",
-                        "## 8. Where the time goes", "## 9. Findings",
-                        "## 10. Limitations", "## 11. Reproduction"):
+        for heading in ("## 1. Instance", "## 2. LP relaxation", "## 3. Arms",
+                        "## 4. Results",
+                        "## 5. LP-biased GRASP vs. classical GRASP",
+                        "## 6. Does multistart pay for itself?",
+                        "## 7. What the LP contributes",
+                        "## 8. Limitations", "## 9. Reproduction"):
             assert heading in md, f"missing {heading}"
 
     def test_main_defaults_to_the_output_directory(self, monkeypatch, tmp_path):
-        """`--out-dir` defaults to `output`; check the default is wired through."""
         monkeypatch.chdir(tmp_path)
         monkeypatch.setattr(
             sys, "argv",
-            ["download_and_run_real_world.py", "--size", "15", "--seeds", "1"],
+            ["download_and_run_real_world.py", "--size", "15", "--restarts", "2"],
         )
         main()
         assert (tmp_path / "output" / "california_4M_results.md").exists()
         assert (tmp_path / "output" / "california_4M_results.json").exists()
 
 
-class TestMultiSeedReporting:
-    """
-    The per-seed table and the multi-seed limitation wording only render when
-    more than one seed is supplied. The published run uses three, so these
-    paths ship to readers and need covering.
-    """
-
-    @staticmethod
-    def _render_with_seeds(seeds):
-        from scripts.download_and_run_real_world import render_report
-
-        lp = LPProfile(
-            bound=100_000.0, solve_seconds=57.0, n_facilities=2000,
-            n_integral_open=50, n_fractional=7, n_near_zero=1943,
-            sum_y=57.5, rounded_open_count=61,
-        )
-        control = ArmResult(
-            method="LP rounding (control)", seed=None,
-            initial_cost=101_033.0, initial_gap=1.033, initial_open=61,
-            final_cost=101_033.0, final_gap=1.033, final_open=61,
-            iterations=0, moves={"insert": 0, "delete": 0, "swap": 0},
-            construct_seconds=9.0, search_seconds=0.0, lp_seconds=57.0,
-        )
-        rounding_ls = ArmResult(
-            method="LP rounding + local search (deterministic ablation)", seed=None,
-            initial_cost=101_033.0, initial_gap=1.033, initial_open=61,
-            final_cost=100_055.0, final_gap=0.055, final_open=58,
-            iterations=5, moves={"insert": 0, "delete": 3, "swap": 2},
-            construct_seconds=9.0, search_seconds=40.0, lp_seconds=67.0,
-        )
-        biased, alpha = [], []
-        for i, seed in enumerate(seeds):
-            biased.append(ArmResult(
-                method="LP-biased hybrid GRASP", seed=seed,
-                initial_cost=134_200.0 + i, initial_gap=34.2 + i, initial_open=75,
-                final_cost=100_042.0 + i, final_gap=0.042 + i * 0.01, final_open=58,
-                iterations=20 + i, moves={"insert": 0, "delete": 17, "swap": 3},
-                construct_seconds=9.3, search_seconds=164.0, lp_seconds=57.0,
-            ))
-            alpha.append(ArmResult(
-                method="alpha-GRASP baseline (alpha=0.2)", seed=seed,
-                initial_cost=118_070.0 + i, initial_gap=18.07 + i, initial_open=66,
-                final_cost=100_344.0 + i, final_gap=0.344 + i * 0.01, final_open=57,
-                iterations=36 + i, moves={"insert": 0, "delete": 9, "swap": 27},
-                construct_seconds=106.8, search_seconds=292.0, lp_seconds=0.0,
-            ))
-        return render_report(
-            n_fac=2000, n_cust=2000, lp=lp, control=control, rounding_ls=rounding_ls,
-            lp_biased=biased, alpha=alpha, seeds=seeds,
-            env={"python": "3.14.6", "numpy": "2.5.3", "scipy": "1.18.1",
-                 "scikit_learn": "1.9.1", "platform": "test", "cpu_count": "12"},
-            generated_at="2026-09-11 00:00 UTC", commit="abc1234", wall_seconds=1800.0,
-        )
-
-    def test_multiple_seeds_render_a_per_seed_table_and_a_spread(self):
-        md = self._render_with_seeds([42, 7, 2024])
-
-        assert "### Per-seed detail" in md
-        for seed in (42, 7, 2024):
-            assert f"| {seed} |" in md
-        assert "Final-gap spread:" in md
-        assert "3 seeds." in md
-        assert "Single seed." not in md
-        assert "values are means across seeds" in md
-
-    def test_single_seed_omits_the_table_and_flags_the_limitation(self):
-        md = self._render_with_seeds([42])
-
-        assert "### Per-seed detail" not in md
-        assert "Final-gap spread:" not in md
-        assert "Single seed." in md
-        assert "single-seed values" in md
-
-
-class TestRobustnessNarrative:
-    """
-    The multi-seed run's strongest result is that one arm converges to the same
-    solution from every start while the other does not. That claim must follow
-    the measured spread, not be asserted.
-    """
-
-    @staticmethod
-    def _render(biased_finals, alpha_finals):
-        from scripts.download_and_run_real_world import render_report
-
-        seeds = [42, 7, 2024][: len(biased_finals)]
-        lp = LPProfile(
-            bound=100_000.0, solve_seconds=67.0, n_facilities=2000,
-            n_integral_open=50, n_fractional=7, n_near_zero=1939,
-            sum_y=57.5, rounded_open_count=61,
-        )
-        control = ArmResult(
-            method="LP rounding (control)", seed=None,
-            initial_cost=101_033.0, initial_gap=1.033, initial_open=61,
-            final_cost=101_033.0, final_gap=1.033, final_open=61,
-            iterations=0, moves={"insert": 0, "delete": 0, "swap": 0},
-            construct_seconds=9.0, search_seconds=0.0, lp_seconds=67.0,
-        )
-
-        rounding_ls = ArmResult(
-            method="LP rounding + local search (deterministic ablation)", seed=None,
-            initial_cost=101_033.0, initial_gap=1.033, initial_open=61,
-            final_cost=100_055.0, final_gap=0.055, final_open=58,
-            iterations=5, moves={"insert": 0, "delete": 3, "swap": 2},
-            construct_seconds=9.0, search_seconds=40.0, lp_seconds=67.0,
-        )
-
-        def arm(method, seed, final_gap, construct, search, lp_seconds):
-            return ArmResult(
-                method=method, seed=seed,
-                initial_cost=134_200.0, initial_gap=34.2, initial_open=75,
-                final_cost=100_000.0 * (1 + final_gap / 100), final_gap=final_gap,
-                final_open=58, iterations=20,
-                moves={"insert": 0, "delete": 17, "swap": 3},
-                construct_seconds=construct, search_seconds=search, lp_seconds=lp_seconds,
-            )
-
-        biased = [arm("LP-biased hybrid GRASP", s, g, 9.3, 164.0, 67.0)
-                  for s, g in zip(seeds, biased_finals)]
-        alpha = [arm("alpha-GRASP baseline (alpha=0.2)", s, g, 106.8, 292.0, 0.0)
-                 for s, g in zip(seeds, alpha_finals)]
-        return render_report(
-            n_fac=2000, n_cust=2000, lp=lp, control=control, rounding_ls=rounding_ls,
-            lp_biased=biased, alpha=alpha, seeds=seeds,
-            env={"python": "3.14.6", "numpy": "2.5.3", "scipy": "1.18.1",
-                 "scikit_learn": "1.9.1", "platform": "test", "cpu_count": "12"},
-            generated_at="2026-09-12 00:00 UTC", commit="abc1234", wall_seconds=2272.0,
-        )
-
-    def test_identical_solutions_across_seeds_are_reported(self):
-        md = self._render([0.0421, 0.0421, 0.0421], [0.3444, 0.1834, 0.0421])
-        assert "reached the identical solution on all 3 seeds" in md
-        assert "**B** is the more consistent arm" in md       # section 4
-        assert "Arm B is the more reproducible." in md         # section 8
-        assert "1 distinct solution" in md
-        assert "3 distinct solutions" in md
-
-    def test_a_varying_arm_is_not_credited_with_identical_solutions(self):
-        """COUNTERWEIGHT: the claim must disappear when the data stops supporting it."""
-        md = self._render([0.04, 0.09, 0.21], [0.3444, 0.1834, 0.0421])
-        assert "reached the identical solution" not in md
-
-    def test_reproducibility_verdict_follows_the_measured_spread(self):
-        """If the baseline is the steadier arm, the report must say so."""
-        md = self._render([0.10, 0.50, 0.90], [0.20, 0.20, 0.20])
-        assert "Arm C is the more reproducible." in md
-        assert "Arm B is the more reproducible." not in md
-        assert "**C** is the more consistent arm" in md
-
-    def test_single_seed_makes_no_reproducibility_claim(self):
-        md = self._render([0.0421], [0.3444])
-        assert "more reproducible" not in md
-        assert "distinct solution" not in md
-        # Finding numbering must close up rather than skip.
-        assert "**6. The iteration counts measure different work.**" in md
-        assert "**7. The iteration counts" not in md
-
-    def test_timing_caveat_makes_no_unfounded_precision_claim(self):
-        md = self._render([0.0421, 0.0421, 0.0421], [0.3444, 0.1834, 0.0421])
-        assert "Only compare timings within this run." in md
-        assert "±15%" not in md
-
-
 class TestRerenderFromJson:
     def test_rerender_reproduces_the_report_without_rerunning(self, tmp_path, monkeypatch):
         """
-        The sidecar exists so prose can be corrected without a 38-minute
-        re-run. Render once, re-render from the JSON, and require byte
-        equality: the measurements must survive the round trip exactly.
+        The sidecar exists so prose can be corrected without re-running a
+        multi-hour benchmark. Byte equality proves the measurements survive the
+        round trip exactly.
         """
         from scripts.download_and_run_real_world import rerender_from_json
 
         out = tmp_path / "out"
         monkeypatch.setattr(
             sys, "argv",
-            ["download_and_run_real_world.py", "--size", "18", "--seeds", "42", "7",
+            ["download_and_run_real_world.py", "--size", "18", "--restarts", "2",
              "--out-dir", str(out)],
         )
         main()
@@ -472,7 +360,7 @@ class TestRerenderFromJson:
         out = tmp_path / "out"
         monkeypatch.setattr(
             sys, "argv",
-            ["download_and_run_real_world.py", "--size", "15", "--seeds", "1",
+            ["download_and_run_real_world.py", "--size", "15", "--restarts", "2",
              "--out-dir", str(out)],
         )
         main()

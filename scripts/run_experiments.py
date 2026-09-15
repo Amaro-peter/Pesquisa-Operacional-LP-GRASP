@@ -10,6 +10,8 @@ from typing import Dict, List, Tuple, Set
 from concurrent.futures import ProcessPoolExecutor
 
 # Import modular UFLP solver components
+from scripts.reference import PROVEN_OPTIMAL
+from scripts.reference import solve_exact_ip as reference_solve_exact_ip
 from scripts.uflp_solver import (
     UFLPInstance, SolutionState, parse_orlib_instance,
     local_search, _find_closest_two, _compute_total_cost,
@@ -106,34 +108,27 @@ def get_lp_bound_and_probs(instance: UFLPInstance) -> Tuple[float, Dict[int, flo
     return lp_obj, lp_probs
 
 def solve_exact_ip(instance: UFLPInstance) -> float:
-    """Solve the exact Integer Program of UFLP using PuLP CBC solver."""
-    F = instance.facilities
-    U = instance.customers
-    c = instance.setup_costs
-    d = instance.service_costs
+    """
+    Proven integer optimum for `instance`, or a RuntimeError.
 
-    model = pulp.LpProblem("Exact_IP_Solver", pulp.LpMinimize)
-    y = {f: pulp.LpVariable(f"y_{f}", cat="Binary") for f in F}
-    x = {u: {f: pulp.LpVariable(f"x_{u}_{f}", cat="Binary") for f in F} for u in U}
+    Delegates to `scripts.reference.solve_exact_ip` rather than rebuilding the
+    model, so there is exactly one place where "did the solver actually prove
+    this?" is decided. That question is not answered by PuLP's `LpStatus`: it
+    reads "Optimal" for a run that merely stopped holding an incumbent. See
+    `scripts/reference.py` and
+    `tests/regression/test_unproven_optimum_regression.py`.
 
-    model += (
-        pulp.lpSum(c[f] * y[f] for f in F)
-        + pulp.lpSum(d[u][f] * x[u][f] for u in U for f in F)
-    )
+    Callers here use the result as ground truth for gap calculations, so an
+    unproven value must raise rather than quietly become "the optimum".
+    """
+    status, solution_status, objective, _seconds = reference_solve_exact_ip(instance)
+    if solution_status != PROVEN_OPTIMAL or objective is None:
+        raise RuntimeError(
+            f"Exact IP solver did not prove optimality "
+            f"(status={status!r}, solution={solution_status!r})"
+        )
+    return objective
 
-    for u in U:
-        model += pulp.lpSum(x[u][f] for f in F) == 1
-    for u in U:
-        for f in F:
-            model += x[u][f] <= y[f]
-
-    solver = pulp.PULP_CBC_CMD(msg=0)
-    model.solve(solver)
-    
-    if model.status != pulp.constants.LpStatusOptimal:
-        raise RuntimeError("Exact IP solver failed to find an optimal solution")
-        
-    return pulp.value(model.objective)
 
 def construct_lp_biased_solution(
     instance: UFLPInstance,
@@ -644,10 +639,15 @@ def main():
         'swap': (sum(1 for r in alpha_grasp_results if r['moves']['swap'] > 0) / n_seeds) * 100
     }
     
-    # --- 5. Export results to cap134.md ---
+    # --- 5. Export results to the duality-gap suite report ---
     os.makedirs(OUTPUT_DIR, exist_ok=True)
-    cap_md_path = os.path.join(OUTPUT_DIR, "cap134.md")
-    cap_png_path = os.path.join(OUTPUT_DIR, "cap134.png")
+    # These outputs are SUPERSEDED by `scripts/run_cap134.py`, which runs the
+    # same instance as a multistart procedure against the proven integer
+    # optimum. They keep a distinct name so the two cannot be confused: this
+    # script's value now is the duality-gap correlation suite, not its
+    # single-start cap134 comparison.
+    cap_md_path = os.path.join(OUTPUT_DIR, "duality_gap_suite.md")
+    cap_png_path = os.path.join(OUTPUT_DIR, "duality_gap_suite.png")
 
     print(f"\nWriting tables of results to {cap_md_path}...")
     with open(cap_md_path, "w", encoding="utf-8") as f:

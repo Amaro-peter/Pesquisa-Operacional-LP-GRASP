@@ -10,6 +10,8 @@ filterwarnings = [
 source = ["scripts"]
 omit = [
     "tests/*",
+    # Thin CLI orchestration over already-covered library code; excluded so the
+    # gate measures algorithmic logic rather than argument parsing.
     "scripts/run_experiments.py",
     "scripts/run_scaling_benchmark.py",
 ]
@@ -24,7 +26,7 @@ fail_under = 85
 show_missing = true
 
 [tool.mutmut]
-source_paths = ["scripts/uflp_solver.py"]
+source_paths = ["scripts/uflp_solver.py", "scripts/reference.py", "scripts/multistart.py"]
 # The mutation gauntlet runs against the unit suite only. mutmut executes from a
 # copied `mutants/` tree that does not contain `data/`, so the repo-layout
 # regression tests cannot run there -- and per CLAUDE.md's "Fast-to-Slow" rule
@@ -40,4 +42,8 @@ also_copy = [
     "scripts/koerkel_ghosh.py",
     "scripts/run_koerkel_ghosh.py",
     "scripts/run_scaling_benchmark.py",
+    "scripts/multistart.py",
+    "scripts/reference.py",
+    "scripts/run_cap134.py",
+    "scripts/run_full_study.py",
 ]

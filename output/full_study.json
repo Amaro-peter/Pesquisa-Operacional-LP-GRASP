@@ -1,0 +1,1783 @@
+{
+  "generated_at": "2026-09-14 21:44 UTC",
+  "generated_by": "run_full_study.py::render_analysis",
+  "git_commit": "ae61a4e (working tree modified)",
+  "environment": {
+    "python": "3.14.6",
+    "numpy": "2.5.3",
+    "scipy": "1.18.1",
+    "scikit_learn": "1.9.1",
+    "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "cpu_count": "12"
+  },
+  "plan": {
+    "100": {
+      "instances": 2,
+      "restarts": 32,
+      "ip_time_limit": 1800.0,
+      "attempt_exact": true
+    },
+    "150": {
+      "instances": 1,
+      "restarts": 32,
+      "ip_time_limit": 1800.0,
+      "attempt_exact": true
+    },
+    "200": {
+      "instances": 1,
+      "restarts": 32,
+      "ip_time_limit": 1800.0,
+      "attempt_exact": true
+    },
+    "250": {
+      "instances": 2,
+      "restarts": 32,
+      "ip_time_limit": 1800.0,
+      "attempt_exact": true
+    },
+    "500": {
+      "instances": 1,
+      "restarts": 32,
+      "ip_time_limit": 1800.0,
+      "attempt_exact": true
+    },
+    "750": {
+      "instances": 1,
+      "restarts": 32,
+      "ip_time_limit": 1800.0,
+      "attempt_exact": true
+    }
+  },
+  "stages": [
+    {
+      "size": 100,
+      "instances": 12,
+      "restarts": 32,
+      "proven": 12,
+      "mean_fractionality": 26.416666666666668,
+      "mean_duality_gap": 1.2546661942246282,
+      "mean_ip_seconds": 17.35208047058465,
+      "mean_lp_seconds": 0.113748057417979,
+      "per_arm": {
+        "lp_rounding_control": {
+          "mean_gap": 10.90317294623565,
+          "best_gap": 0.25338401013536044,
+          "worst_gap": 27.918803382339135,
+          "mean_seconds": 0.11717828750261106,
+          "at_reference": 0,
+          "gaps": [
+            0.25338401013536044,
+            0.34247555449558786,
+            0.5970916778561838,
+            1.2383164226837486,
+            25.63757578893805,
+            27.918803382339135,
+            25.4568617492877,
+            26.95046996182095,
+            6.287641532160924,
+            5.891686834543406,
+            6.154720893675374,
+            4.109047546891367
+          ]
+        },
+        "lp_rounding_plus_search": {
+          "mean_gap": 0.1129211599945542,
+          "best_gap": 0.0,
+          "worst_gap": 0.8712759977515458,
+          "mean_seconds": 0.1334285680859466,
+          "at_reference": 6,
+          "gaps": [
+            0.0028577144000228615,
+            0.0,
+            0.0,
+            0.07709733300336943,
+            0.06813457872993696,
+            0.0,
+            0.02238041541494151,
+            0.31330788063483367,
+            0.8712759977515458,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "local_search_only": {
+          "mean_gap": 0.09198357116156537,
+          "best_gap": 0.0,
+          "worst_gap": 0.3558111555756547,
+          "mean_seconds": 0.042357108998961245,
+          "at_reference": 4,
+          "gaps": [
+            0.061917145333828666,
+            0.08204149773431911,
+            0.0638040548905332,
+            0.027602748853058197,
+            0.0,
+            0.3558111555756547,
+            0.29869246726864246,
+            0.19859953089421148,
+            0.0,
+            0.015334253388536646,
+            0.0,
+            0.0
+          ]
+        },
+        "lp_biased_multistart": {
+          "mean_gap": 0.0,
+          "best_gap": 0.0,
+          "worst_gap": 0.0,
+          "mean_seconds": 0.8546818475800441,
+          "at_reference": 12,
+          "gaps": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "alpha_grasp_multistart": {
+          "mean_gap": 0.0030140932655638255,
+          "best_gap": 0.0,
+          "worst_gap": 0.03616911918676591,
+          "mean_seconds": 0.9829618902494985,
+          "at_reference": 11,
+          "gaps": [
+            0.0,
+            0.0,
+            0.0,
+            0.03616911918676591,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "a_plus": 0.1129211599945542,
+      "no_lp": 0.09198357116156537,
+      "lp_biased": 0.0,
+      "alpha": 0.0030140932655638255,
+      "b_at_reference": 12,
+      "c_at_reference": 11,
+      "b_beats_c": 1,
+      "c_beats_b": 0,
+      "b_beats_ap": 6,
+      "ap_beats_b": 0,
+      "median_best_restart": 4,
+      "median_restarts_to_best": 2,
+      "rows": [
+        {
+          "name": "gs100a-1",
+          "klass": "a",
+          "symmetric": true,
+          "lp_bound": 104959.33333333334,
+          "reference": 104979.0,
+          "proven": true,
+          "ip_status": "Optimal",
+          "ip_seconds": 1.4610831110039726,
+          "fractional": 19,
+          "n_facilities": 100,
+          "gaps": {
+            "lp_rounding_control": 0.25338401013536044,
+            "lp_rounding_plus_search": 0.0028577144000228615,
+            "local_search_only": 0.061917145333828666,
+            "lp_biased_multistart": 0.0,
+            "alpha_grasp_multistart": 0.0
+          },
+          "best_found_at": 12
+        },
+        {
+          "name": "gs100a-2",
+          "klass": "a",
+          "symmetric": true,
+          "lp_bound": 104708.57142857152,
+          "reference": 104825.0,
+          "proven": true,
+          "ip_status": "Optimal",
+          "ip_seconds": 1.8019675100003951,
+          "fractional": 37,
+          "n_facilities": 100,
+          "gaps": {
+            "lp_rounding_control": 0.34247555449558786,
+            "lp_rounding_plus_search": 0.0,
+            "local_search_only": 0.08204149773431911,
+            "lp_biased_multistart": 0.0,
+            "alpha_grasp_multistart": 0.0
+          },
+          "best_found_at": 1
+        },
+        {
+          "name": "ga100a-1",
+          "klass": "a",
+          "symmetric": false,
+          "lp_bound": 104955.59375000004,
+          "reference": 105009.0,
+          "proven": true,
+          "ip_status": "Optimal",
+          "ip_seconds": 1.6774186590046156,
+          "fractional": 34,
+          "n_facilities": 100,
+          "gaps": {
+            "lp_rounding_control": 0.5970916778561838,
+            "lp_rounding_plus_search": 0.0,
+            "local_search_only": 0.0638040548905332,
+            "lp_biased_multistart": 0.0,
+            "alpha_grasp_multistart": 0.0
+          },
+          "best_found_at": 4
+        },
+        {
+          "name": "ga100a-2",
+          "klass": "a",
+          "symmetric": false,
+          "lp_bound": 104937.62406947897,
+          "reference": 105062.0,
+          "proven": true,
+          "ip_status": "Optimal",
+          "ip_seconds": 6.294361319000018,
+          "fractional": 47,
+          "n_facilities": 100,
+          "gaps": {
+            "lp_rounding_control": 1.2383164226837486,
+            "lp_rounding_plus_search": 0.07709733300336943,
+            "local_search_only": 0.027602748853058197,
+            "lp_biased_multistart": 0.0,
+            "alpha_grasp_multistart": 0.03616911918676591
+          },
+          "best_found_at": 20
+        },
+        {
+          "name": "gs100b-1",
+          "klass": "b",
+          "symmetric": true,
+          "lp_bound": 115091.0425408131,
+          "reference": 115947.0,
+          "proven": true,
+          "ip_status": "Optimal",
+          "ip_seconds": 15.245806844999606,
+          "fractional": 32,
+          "n_facilities": 100,
+          "gaps": {
+            "lp_rounding_control": 25.63757578893805,
+            "lp_rounding_plus_search": 0.06813457872993696,
+            "local_search_only": 0.0,
+            "lp_biased_multistart": 0.0,
+            "alpha_grasp_multistart": 0.0
+          },
+          "best_found_at": 2
+        },
+        {
+          "name": "gs100b-2",
+          "klass": "b",
+          "symmetric": true,
+          "lp_bound": 115651.71266707228,
+          "reference": 117197.0,
+          "proven": true,
+          "ip_status": "Optimal",
+          "ip_seconds": 81.9861593079986,
+          "fractional": 35,
+          "n_facilities": 100,
+          "gaps": {
+            "lp_rounding_control": 27.918803382339135,
+            "lp_rounding_plus_search": 0.0,
+            "local_search_only": 0.3558111555756547,
+            "lp_biased_multistart": 0.0,
+            "alpha_grasp_multistart": 0.0
+          },
+          "best_found_at": 7
+        },
+        {
+          "name": "ga100b-1",
+          "klass": "b",
+          "symmetric": false,
+          "lp_bound": 114978.52388402678,
+          "reference": 116173.0,
+          "proven": true,
+          "ip_status": "Optimal",
+          "ip_seconds": 19.792983167004422,
+          "fractional": 26,
+          "n_facilities": 100,
+          "gaps": {
+            "lp_rounding_control": 25.4568617492877,
+            "lp_rounding_plus_search": 0.02238041541494151,
+            "local_search_only": 0.29869246726864246,
+            "lp_biased_multistart": 0.0,
+            "alpha_grasp_multistart": 0.0
+          },
+          "best_found_at": 3
+        },
+        {
+          "name": "ga100b-2",
+          "klass": "b",
+          "symmetric": false,
+          "lp_bound": 115679.34541325997,
+          "reference": 116818.0,
+          "proven": true,
+          "ip_status": "Optimal",
+          "ip_seconds": 35.7445019730003,
+          "fractional": 33,
+          "n_facilities": 100,
+          "gaps": {
+            "lp_rounding_control": 26.95046996182095,
+            "lp_rounding_plus_search": 0.31330788063483367,
+            "local_search_only": 0.19859953089421148,
+            "lp_biased_multistart": 0.0,
+            "alpha_grasp_multistart": 0.0
+          },
+          "best_found_at": 22
+        },
+        {
+          "name": "gs100c-1",
+          "klass": "c",
+          "symmetric": true,
+          "lp_bound": 146016.86345541393,
+          "reference": 149436.0,
+          "proven": true,
+          "ip_status": "Optimal",
+          "ip_seconds": 14.890758176006784,
+          "fractional": 17,
+          "n_facilities": 100,
+          "gaps": {
+            "lp_rounding_control": 6.287641532160924,
+            "lp_rounding_plus_search": 0.8712759977515458,
+            "local_search_only": 0.0,
+            "lp_biased_multistart": 0.0,
+            "alpha_grasp_multistart": 0.0
+          },
+          "best_found_at": 1
+        },
+        {
+          "name": "gs100c-2",
+          "klass": "c",
+          "symmetric": true,
+          "lp_bound": 145708.5000000002,
+          "reference": 149991.0,
+          "proven": true,
+          "ip_status": "Optimal",
+          "ip_seconds": 9.536143138000625,
+          "fractional": 10,
+          "n_facilities": 100,
+          "gaps": {
+            "lp_rounding_control": 5.891686834543406,
+            "lp_rounding_plus_search": 0.0,
+            "local_search_only": 0.015334253388536646,
+            "lp_biased_multistart": 0.0,
+            "alpha_grasp_multistart": 0.0
+          },
+          "best_found_at": 1
+        },
+        {
+          "name": "ga100c-1",
+          "klass": "c",
+          "symmetric": false,
+          "lp_bound": 145309.0864485983,
+          "reference": 149495.0,
+          "proven": true,
+          "ip_status": "Optimal",
+          "ip_seconds": 9.135643643996445,
+          "fractional": 13,
+          "n_facilities": 100,
+          "gaps": {
+            "lp_rounding_control": 6.154720893675374,
+            "lp_rounding_plus_search": 0.0,
+            "local_search_only": 0.0,
+            "lp_biased_multistart": 0.0,
+            "alpha_grasp_multistart": 0.0
+          },
+          "best_found_at": 1
+        },
+        {
+          "name": "ga100c-2",
+          "klass": "c",
+          "symmetric": false,
+          "lp_bound": 148096.14569536422,
+          "reference": 151787.0,
+          "proven": true,
+          "ip_status": "Optimal",
+          "ip_seconds": 10.658138796999992,
+          "fractional": 14,
+          "n_facilities": 100,
+          "gaps": {
+            "lp_rounding_control": 4.109047546891367,
+            "lp_rounding_plus_search": 0.0,
+            "local_search_only": 0.0,
+            "lp_biased_multistart": 0.0,
+            "alpha_grasp_multistart": 0.0
+          },
+          "best_found_at": 7
+        }
+      ],
+      "stage_seconds": 232.0345200879965
+    },
+    {
+      "size": 150,
+      "instances": 6,
+      "restarts": 32,
+      "proven": 6,
+      "mean_fractionality": 26.555555555555557,
+      "mean_duality_gap": 1.186765325487554,
+      "mean_ip_seconds": 254.8888308663336,
+      "mean_lp_seconds": 0.39051105266723124,
+      "per_arm": {
+        "lp_rounding_control": {
+          "mean_gap": 10.855556424133546,
+          "best_gap": 0.8878256586732507,
+          "worst_gap": 28.702538498908392,
+          "mean_seconds": 0.3987048981665187,
+          "at_reference": 0,
+          "gaps": [
+            0.8878256586732507,
+            2.3254771932968903,
+            16.176930936925977,
+            28.702538498908392,
+            6.239858386192654,
+            10.800707870804114
+          ]
+        },
+        "lp_rounding_plus_search": {
+          "mean_gap": 0.045988346279362935,
+          "best_gap": 0.0,
+          "worst_gap": 0.19786307874950534,
+          "mean_seconds": 0.4744812273347634,
+          "at_reference": 3,
+          "gaps": [
+            0.03518041154685071,
+            0.042886587379821546,
+            0.19786307874950534,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "local_search_only": {
+          "mean_gap": 0.15101827060473486,
+          "best_gap": 0.0,
+          "worst_gap": 0.33311873556633137,
+          "mean_seconds": 0.14077708949480439,
+          "at_reference": 2,
+          "gaps": [
+            0.1451991531115475,
+            0.12225877894844649,
+            0.33311873556633137,
+            0.30553295600208374,
+            0.0,
+            0.0
+          ]
+        },
+        "lp_biased_multistart": {
+          "mean_gap": 0.0,
+          "best_gap": 0.0,
+          "worst_gap": 0.0,
+          "mean_seconds": 3.0404945650116133,
+          "at_reference": 6,
+          "gaps": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "alpha_grasp_multistart": {
+          "mean_gap": 0.0,
+          "best_gap": 0.0,
+          "worst_gap": 0.0,
+          "mean_seconds": 2.8757237609970616,
+          "at_reference": 6,
+          "gaps": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "a_plus": 0.045988346279362935,
+      "no_lp": 0.15101827060473486,
+      "lp_biased": 0.0,
+      "alpha": 0.0,
+      "b_at_reference": 6,
+      "c_at_reference": 6,
+      "b_beats_c": 0,
+      "c_beats_b": 0,
+      "b_beats_ap": 3,
+      "ap_beats_b": 0,
+      "median_best_restart": 4,
+      "median_restarts_to_best": 4,
+      "rows": [
+        {
+          "name": "gs150a-1",
+          "klass": "a",
+          "symmetric": true,
+          "lp_bound": 156178.3831775702,
+          "reference": 156337.0,
+          "proven": true,
+          "ip_status": "Optimal",
+          "ip_seconds": 39.92531237199728,
+          "fractional": 59,
+          "n_facilities": 150,
+          "gaps": {
+            "lp_rounding_control": 0.8878256586732507,
+            "lp_rounding_plus_search": 0.03518041154685071,
+            "local_search_only": 0.1451991531115475,
+            "lp_biased_multistart": 0.0,
+            "alpha_grasp_multistart": 0.0
+          },
+          "best_found_at": 4
+        },
+        {
+          "name": "ga150a-1",
+          "klass": "a",
+          "symmetric": false,
+          "lp_bound": 156019.2775623268,
+          "reference": 156226.0,
+          "proven": true,
+          "ip_status": "Optimal",
+          "ip_seconds": 98.72277125300025,
+          "fractional": 63,
+          "n_facilities": 150,
+          "gaps": {
+            "lp_rounding_control": 2.3254771932968903,
+            "lp_rounding_plus_search": 0.042886587379821546,
+            "local_search_only": 0.12225877894844649,
+            "lp_biased_multistart": 0.0,
+            "alpha_grasp_multistart": 0.0
+          },
+          "best_found_at": 13
+        },
+        {
+          "name": "gs150b-1",
+          "klass": "b",
+          "symmetric": true,
+          "lp_bound": 168104.3466509988,
+          "reference": 169309.0,
+          "proven": true,
+          "ip_status": "Optimal",
+          "ip_seconds": 68.05295845700311,
+          "fractional": 36,
+          "n_facilities": 150,
+          "gaps": {
+            "lp_rounding_control": 16.176930936925977,
+            "lp_rounding_plus_search": 0.19786307874950534,
+            "local_search_only": 0.33311873556633137,
+            "lp_biased_multistart": 0.0,
+            "alpha_grasp_multistart": 0.0
+          },
+          "best_found_at": 4
+        },
+        {
+          "name": "ga150b-1",
+          "klass": "b",
+          "symmetric": false,
+          "lp_bound": 168739.20945811862,
+          "reference": 170849.0,
+          "proven": true,
+          "ip_status": "Optimal",
+          "ip_seconds": 1255.2864715739997,
+          "fractional": 43,
+          "n_facilities": 150,
+          "gaps": {
+            "lp_rounding_control": 28.702538498908392,
+            "lp_rounding_plus_search": 0.0,
+            "local_search_only": 0.30553295600208374,
+            "lp_biased_multistart": 0.0,
+            "alpha_grasp_multistart": 0.0
+          },
+          "best_found_at": 2
+        },
+        {
+          "name": "gs150c-1",
+          "klass": "c",
+          "symmetric": true,
+          "lp_bound": 205040.56258411813,
+          "reference": 210149.0,
+          "proven": true,
+          "ip_status": "Optimal",
+          "ip_seconds": 28.212437631002103,
+          "fractional": 17,
+          "n_facilities": 150,
+          "gaps": {
+            "lp_rounding_control": 6.239858386192654,
+            "lp_rounding_plus_search": 0.0,
+            "local_search_only": 0.0,
+            "lp_biased_multistart": 0.0,
+            "alpha_grasp_multistart": 0.0
+          },
+          "best_found_at": 1
+        },
+        {
+          "name": "ga150c-1",
+          "klass": "c",
+          "symmetric": false,
+          "lp_bound": 206328.00882538324,
+          "reference": 211338.0,
+          "proven": true,
+          "ip_status": "Optimal",
+          "ip_seconds": 39.133033910999075,
+          "fractional": 21,
+          "n_facilities": 150,
+          "gaps": {
+            "lp_rounding_control": 10.800707870804114,
+            "lp_rounding_plus_search": 0.0,
+            "local_search_only": 0.0,
+            "lp_biased_multistart": 0.0,
+            "alpha_grasp_multistart": 0.0
+          },
+          "best_found_at": 3
+        }
+      ],
+      "stage_seconds": 1567.2910667769975
+    },
+    {
+      "size": 200,
+      "instances": 6,
+      "restarts": 32,
+      "proven": 4,
+      "mean_fractionality": 28.083333333333332,
+      "mean_duality_gap": 1.6777014703398747,
+      "mean_ip_seconds": 834.0818522273343,
+      "mean_lp_seconds": 1.0118518489992614,
+      "per_arm": {
+        "lp_rounding_control": {
+          "mean_gap": 13.565513781129338,
+          "best_gap": 1.7408852155105823,
+          "worst_gap": 34.46603237465127,
+          "mean_seconds": 1.0269025341658562,
+          "at_reference": 0,
+          "gaps": [
+            1.7408852155105823,
+            2.8930046712735975,
+            34.46603237465127,
+            20.55739309924378,
+            11.598506764851992,
+            10.137260561244807
+          ]
+        },
+        "lp_rounding_plus_search": {
+          "mean_gap": 0.47855659283888435,
+          "best_gap": 0.012787116432175309,
+          "worst_gap": 1.4318795864402305,
+          "mean_seconds": 1.2229596693299147,
+          "at_reference": 0,
+          "gaps": [
+            0.04924300942376024,
+            0.08782766474925685,
+            1.4318795864402305,
+            1.2340807165589942,
+            0.055521463428888695,
+            0.012787116432175309
+          ]
+        },
+        "local_search_only": {
+          "mean_gap": 0.48647601638247145,
+          "best_gap": 0.0,
+          "worst_gap": 1.5653902257316812,
+          "mean_seconds": 0.33893725600015995,
+          "at_reference": 1,
+          "gaps": [
+            0.042484164993048044,
+            0.10616530903756322,
+            1.5653902257316812,
+            1.1920292821003609,
+            0.0,
+            0.012787116432175309
+          ]
+        },
+        "lp_biased_multistart": {
+          "mean_gap": 0.36246663861913314,
+          "best_gap": 0.0,
+          "worst_gap": 1.1028550618135036,
+          "mean_seconds": 7.625779924817228,
+          "at_reference": 2,
+          "gaps": [
+            0.0033794222153560945,
+            0.013994518009496968,
+            1.1028550618135036,
+            1.0545708296764422,
+            0.0,
+            0.0
+          ]
+        },
+        "alpha_grasp_multistart": {
+          "mean_gap": 0.3667295074799029,
+          "best_gap": 0.0,
+          "worst_gap": 1.1028550618135036,
+          "mean_seconds": 7.213861487830097,
+          "at_reference": 2,
+          "gaps": [
+            0.005793295226324734,
+            0.03715785816314712,
+            1.1028550618135036,
+            1.0545708296764422,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "a_plus": 0.47855659283888435,
+      "no_lp": 0.48647601638247145,
+      "lp_biased": 0.36246663861913314,
+      "alpha": 0.3667295074799029,
+      "b_at_reference": 2,
+      "c_at_reference": 2,
+      "b_beats_c": 2,
+      "c_beats_b": 0,
+      "b_beats_ap": 6,
+      "ap_beats_b": 0,
+      "median_best_restart": 3,
+      "median_restarts_to_best": 19,
+      "rows": [
+        {
+          "name": "gs200a-1",
+          "klass": "a",
+          "symmetric": true,
+          "lp_bound": 206924.82628825665,
+          "reference": 207136.0,
+          "proven": true,
+          "ip_status": "Optimal",
+          "ip_seconds": 412.1861459610009,
+          "fractional": 86,
+          "n_facilities": 200,
+          "gaps": {
+            "lp_rounding_control": 1.7408852155105823,
+            "lp_rounding_plus_search": 0.04924300942376024,
+            "local_search_only": 0.042484164993048044,
+            "lp_biased_multistart": 0.0033794222153560945,
+            "alpha_grasp_multistart": 0.005793295226324734
+          },
+          "best_found_at": 13
+        },
+        {
+          "name": "ga200a-1",
+          "klass": "a",
+          "symmetric": false,
+          "lp_bound": 206995.15629959496,
+          "reference": 207224.0,
+          "proven": true,
+          "ip_status": "Optimal",
+          "ip_seconds": 564.3282189009988,
+          "fractional": 89,
+          "n_facilities": 200,
+          "gaps": {
+            "lp_rounding_control": 2.8930046712735975,
+            "lp_rounding_plus_search": 0.08782766474925685,
+            "local_search_only": 0.10616530903756322,
+            "lp_biased_multistart": 0.013994518009496968,
+            "alpha_grasp_multistart": 0.03715785816314712
+          },
+          "best_found_at": 30
+        },
+        {
+          "name": "gs200b-1",
+          "klass": "b",
+          "symmetric": true,
+          "lp_bound": 220956.17365446233,
+          "reference": 220956.17365446233,
+          "proven": false,
+          "ip_status": "not proven (Solution Found)",
+          "ip_seconds": 1656.198370764003,
+          "fractional": 53,
+          "n_facilities": 200,
+          "gaps": {
+            "lp_rounding_control": 34.46603237465127,
+            "lp_rounding_plus_search": 1.4318795864402305,
+            "local_search_only": 1.5653902257316812,
+            "lp_biased_multistart": 1.1028550618135036,
+            "alpha_grasp_multistart": 1.1028550618135036
+          },
+          "best_found_at": 3
+        },
+        {
+          "name": "ga200b-1",
+          "klass": "b",
+          "symmetric": false,
+          "lp_bound": 221157.73503870866,
+          "reference": 221157.73503870866,
+          "proven": false,
+          "ip_status": "not proven (Solution Found)",
+          "ip_seconds": 1656.9918971450024,
+          "fractional": 49,
+          "n_facilities": 200,
+          "gaps": {
+            "lp_rounding_control": 20.55739309924378,
+            "lp_rounding_plus_search": 1.2340807165589942,
+            "local_search_only": 1.1920292821003609,
+            "lp_biased_multistart": 1.0545708296764422,
+            "alpha_grasp_multistart": 1.0545708296764422
+          },
+          "best_found_at": 3
+        },
+        {
+          "name": "gs200c-1",
+          "klass": "c",
+          "symmetric": true,
+          "lp_bound": 265124.6617674651,
+          "reference": 273768.0,
+          "proven": true,
+          "ip_status": "Optimal",
+          "ip_seconds": 356.90655707199767,
+          "fractional": 29,
+          "n_facilities": 200,
+          "gaps": {
+            "lp_rounding_control": 11.598506764851992,
+            "lp_rounding_plus_search": 0.055521463428888695,
+            "local_search_only": 0.0,
+            "lp_biased_multistart": 0.0,
+            "alpha_grasp_multistart": 0.0
+          },
+          "best_found_at": 1
+        },
+        {
+          "name": "ga200c-1",
+          "klass": "c",
+          "symmetric": false,
+          "lp_bound": 265127.90911054035,
+          "reference": 273713.0,
+          "proven": true,
+          "ip_status": "Optimal",
+          "ip_seconds": 357.87992352100264,
+          "fractional": 31,
+          "n_facilities": 200,
+          "gaps": {
+            "lp_rounding_control": 10.137260561244807,
+            "lp_rounding_plus_search": 0.012787116432175309,
+            "local_search_only": 0.012787116432175309,
+            "lp_biased_multistart": 0.0,
+            "alpha_grasp_multistart": 0.0
+          },
+          "best_found_at": 2
+        }
+      ],
+      "stage_seconds": 5098.9134487970005
+    },
+    {
+      "size": 250,
+      "instances": 12,
+      "restarts": 32,
+      "proven": 1,
+      "mean_fractionality": 26.46666666666667,
+      "mean_duality_gap": 3.005939718430611,
+      "mean_ip_seconds": 1634.7955417371668,
+      "mean_lp_seconds": 2.211707887333508,
+      "per_arm": {
+        "lp_rounding_control": {
+          "mean_gap": 18.177492196093297,
+          "best_gap": 2.104868335061961,
+          "worst_gap": 36.30615844541122,
+          "mean_seconds": 2.234706036166699,
+          "at_reference": 0,
+          "gaps": [
+            3.522856929055461,
+            3.0361492069598,
+            2.18574374027662,
+            2.104868335061961,
+            34.23147103410989,
+            35.0760919025136,
+            35.47632483338427,
+            36.30615844541122,
+            13.132826037821141,
+            18.278340725836784,
+            17.601223827225695,
+            17.177851335463114
+          ]
+        },
+        "lp_rounding_plus_search": {
+          "mean_gap": 1.2521994979155895,
+          "best_gap": 0.0,
+          "worst_gap": 3.416201727451276,
+          "mean_seconds": 2.5787303269169874,
+          "at_reference": 1,
+          "gaps": [
+            0.17303870563854185,
+            0.19137016629754655,
+            0.13482830549912955,
+            0.13035427662110718,
+            1.3733712592025917,
+            1.2210998404551439,
+            0.8773657400439141,
+            0.7727254188055825,
+            0.0,
+            3.344857212546881,
+            3.416201727451276,
+            3.39118132242536
+          ]
+        },
+        "local_search_only": {
+          "mean_gap": 1.303424796388835,
+          "best_gap": 0.0,
+          "worst_gap": 3.416201727451276,
+          "mean_seconds": 0.5889389525829453,
+          "at_reference": 1,
+          "gaps": [
+            0.2196340675036201,
+            0.194477092212263,
+            0.14104909165200916,
+            0.18357253867233617,
+            1.0783674557900202,
+            1.5163213415149768,
+            1.3074167498222309,
+            0.8480189570750467,
+            0.0,
+            3.344857212546881,
+            3.416201727451276,
+            3.39118132242536
+          ]
+        },
+        "lp_biased_multistart": {
+          "mean_gap": 1.2030362333574143,
+          "best_gap": 0.0,
+          "worst_gap": 3.416201727451276,
+          "mean_seconds": 15.382821985249771,
+          "at_reference": 1,
+          "gaps": [
+            0.14469319383728588,
+            0.1610776386290611,
+            0.1313291132881348,
+            0.13035427662110718,
+            1.0371617329400566,
+            1.0590389668869828,
+            0.8773657400439141,
+            0.7727254188055825,
+            0.0,
+            3.31530566936021,
+            3.416201727451276,
+            3.39118132242536
+          ]
+        },
+        "alpha_grasp_multistart": {
+          "mean_gap": 1.2053048149300811,
+          "best_gap": 0.0,
+          "worst_gap": 3.416201727451276,
+          "mean_seconds": 13.007703747087058,
+          "at_reference": 1,
+          "gaps": [
+            0.14857614065937574,
+            0.1439895460981206,
+            0.13055151501902484,
+            0.13035427662110718,
+            1.0783674557900202,
+            1.0590389668869828,
+            0.8773657400439141,
+            0.7727254188055825,
+            0.0,
+            3.31530566936021,
+            3.416201727451276,
+            3.39118132242536
+          ]
+        }
+      },
+      "a_plus": 1.2521994979155895,
+      "no_lp": 1.303424796388835,
+      "lp_biased": 1.2030362333574143,
+      "alpha": 1.2053048149300811,
+      "b_at_reference": 1,
+      "c_at_reference": 1,
+      "b_beats_c": 2,
+      "c_beats_b": 2,
+      "b_beats_ap": 6,
+      "ap_beats_b": 0,
+      "median_best_restart": 9,
+      "median_restarts_to_best": 10,
+      "rows": [
+        {
+          "name": "gs250a-1",
+          "klass": "a",
+          "symmetric": true,
+          "lp_bound": 257536.3624119338,
+          "reference": 257536.3624119338,
+          "proven": false,
+          "ip_status": "not proven (Solution Found)",
+          "ip_seconds": 1672.9132863089994,
+          "fractional": 101,
+          "n_facilities": 250,
+          "gaps": {
+            "lp_rounding_control": 3.522856929055461,
+            "lp_rounding_plus_search": 0.17303870563854185,
+            "local_search_only": 0.2196340675036201,
+            "lp_biased_multistart": 0.14469319383728588,
+            "alpha_grasp_multistart": 0.14857614065937574
+          },
+          "best_found_at": 8
+        },
+        {
+          "name": "gs250a-2",
+          "klass": "a",
+          "symmetric": true,
+          "lp_bound": 257489.24240860436,
+          "reference": 257489.24240860436,
+          "proven": false,
+          "ip_status": "not proven (Solution Found)",
+          "ip_seconds": 1676.3316548800003,
+          "fractional": 107,
+          "n_facilities": 250,
+          "gaps": {
+            "lp_rounding_control": 3.0361492069598,
+            "lp_rounding_plus_search": 0.19137016629754655,
+            "local_search_only": 0.194477092212263,
+            "lp_biased_multistart": 0.1610776386290611,
+            "alpha_grasp_multistart": 0.1439895460981206
+          },
+          "best_found_at": 15
+        },
+        {
+          "name": "ga250a-1",
+          "klass": "a",
+          "symmetric": false,
+          "lp_bound": 257202.2186069461,
+          "reference": 257202.2186069461,
+          "proven": false,
+          "ip_status": "not proven (Solution Found)",
+          "ip_seconds": 1688.2296827419996,
+          "fractional": 90,
+          "n_facilities": 250,
+          "gaps": {
+            "lp_rounding_control": 2.18574374027662,
+            "lp_rounding_plus_search": 0.13482830549912955,
+            "local_search_only": 0.14104909165200916,
+            "lp_biased_multistart": 0.1313291132881348,
+            "alpha_grasp_multistart": 0.13055151501902484
+          },
+          "best_found_at": 20
+        },
+        {
+          "name": "ga250a-2",
+          "klass": "a",
+          "symmetric": false,
+          "lp_bound": 257430.42842722108,
+          "reference": 257430.42842722108,
+          "proven": false,
+          "ip_status": "not proven (Solution Found)",
+          "ip_seconds": 1658.6775642389985,
+          "fractional": 97,
+          "n_facilities": 250,
+          "gaps": {
+            "lp_rounding_control": 2.104868335061961,
+            "lp_rounding_plus_search": 0.13035427662110718,
+            "local_search_only": 0.18357253867233617,
+            "lp_biased_multistart": 0.13035427662110718,
+            "alpha_grasp_multistart": 0.13035427662110718
+          },
+          "best_found_at": 7
+        },
+        {
+          "name": "gs250b-1",
+          "klass": "b",
+          "symmetric": true,
+          "lp_bound": 274233.75246067235,
+          "reference": 274233.75246067235,
+          "proven": false,
+          "ip_status": "not proven (Solution Found)",
+          "ip_seconds": 1669.4867866200002,
+          "fractional": 70,
+          "n_facilities": 250,
+          "gaps": {
+            "lp_rounding_control": 34.23147103410989,
+            "lp_rounding_plus_search": 1.3733712592025917,
+            "local_search_only": 1.0783674557900202,
+            "lp_biased_multistart": 1.0371617329400566,
+            "alpha_grasp_multistart": 1.0783674557900202
+          },
+          "best_found_at": 5
+        },
+        {
+          "name": "gs250b-2",
+          "klass": "b",
+          "symmetric": true,
+          "lp_bound": 273354.07384045655,
+          "reference": 273354.07384045655,
+          "proven": false,
+          "ip_status": "not proven (Solution Found)",
+          "ip_seconds": 1666.7759113820011,
+          "fractional": 70,
+          "n_facilities": 250,
+          "gaps": {
+            "lp_rounding_control": 35.0760919025136,
+            "lp_rounding_plus_search": 1.2210998404551439,
+            "local_search_only": 1.5163213415149768,
+            "lp_biased_multistart": 1.0590389668869828,
+            "alpha_grasp_multistart": 1.0590389668869828
+          },
+          "best_found_at": 23
+        },
+        {
+          "name": "ga250b-1",
+          "klass": "b",
+          "symmetric": false,
+          "lp_bound": 272990.8716189679,
+          "reference": 272990.8716189679,
+          "proven": false,
+          "ip_status": "not proven (Solution Found)",
+          "ip_seconds": 1660.2800838229996,
+          "fractional": 57,
+          "n_facilities": 250,
+          "gaps": {
+            "lp_rounding_control": 35.47632483338427,
+            "lp_rounding_plus_search": 0.8773657400439141,
+            "local_search_only": 1.3074167498222309,
+            "lp_biased_multistart": 0.8773657400439141,
+            "alpha_grasp_multistart": 0.8773657400439141
+          },
+          "best_found_at": 10
+        },
+        {
+          "name": "ga250b-2",
+          "klass": "b",
+          "symmetric": false,
+          "lp_bound": 273595.85528144176,
+          "reference": 273595.85528144176,
+          "proven": false,
+          "ip_status": "not proven (Solution Found)",
+          "ip_seconds": 1648.356717136001,
+          "fractional": 65,
+          "n_facilities": 250,
+          "gaps": {
+            "lp_rounding_control": 36.30615844541122,
+            "lp_rounding_plus_search": 0.7727254188055825,
+            "local_search_only": 0.8480189570750467,
+            "lp_biased_multistart": 0.7727254188055825,
+            "alpha_grasp_multistart": 0.7727254188055825
+          },
+          "best_found_at": 2
+        },
+        {
+          "name": "gs250c-1",
+          "klass": "c",
+          "symmetric": true,
+          "lp_bound": 322141.6171796036,
+          "reference": 331825.0,
+          "proven": true,
+          "ip_status": "Optimal",
+          "ip_seconds": 1260.7814543820023,
+          "fractional": 36,
+          "n_facilities": 250,
+          "gaps": {
+            "lp_rounding_control": 13.132826037821141,
+            "lp_rounding_plus_search": 0.0,
+            "local_search_only": 0.0,
+            "lp_biased_multistart": 0.0,
+            "alpha_grasp_multistart": 0.0
+          },
+          "best_found_at": 1
+        },
+        {
+          "name": "gs250c-2",
+          "klass": "c",
+          "symmetric": true,
+          "lp_bound": 321472.21348104515,
+          "reference": 321472.21348104515,
+          "proven": false,
+          "ip_status": "not proven (Solution Found)",
+          "ip_seconds": 1682.8701092049996,
+          "fractional": 36,
+          "n_facilities": 250,
+          "gaps": {
+            "lp_rounding_control": 18.278340725836784,
+            "lp_rounding_plus_search": 3.344857212546881,
+            "local_search_only": 3.344857212546881,
+            "lp_biased_multistart": 3.31530566936021,
+            "alpha_grasp_multistart": 3.31530566936021
+          },
+          "best_found_at": 9
+        },
+        {
+          "name": "ga250c-1",
+          "klass": "c",
+          "symmetric": false,
+          "lp_bound": 322029.81199956284,
+          "reference": 322029.81199956284,
+          "proven": false,
+          "ip_status": "not proven (Solution Found)",
+          "ip_seconds": 1652.5374720190011,
+          "fractional": 32,
+          "n_facilities": 250,
+          "gaps": {
+            "lp_rounding_control": 17.601223827225695,
+            "lp_rounding_plus_search": 3.416201727451276,
+            "local_search_only": 3.416201727451276,
+            "lp_biased_multistart": 3.416201727451276,
+            "alpha_grasp_multistart": 3.416201727451276
+          },
+          "best_found_at": 6
+        },
+        {
+          "name": "ga250c-2",
+          "klass": "c",
+          "symmetric": false,
+          "lp_bound": 322260.5600771213,
+          "reference": 322260.5600771213,
+          "proven": false,
+          "ip_status": "not proven (Solution Found)",
+          "ip_seconds": 1680.3057781089992,
+          "fractional": 33,
+          "n_facilities": 250,
+          "gaps": {
+            "lp_rounding_control": 17.177851335463114,
+            "lp_rounding_plus_search": 3.39118132242536,
+            "local_search_only": 3.39118132242536,
+            "lp_biased_multistart": 3.39118132242536,
+            "alpha_grasp_multistart": 3.39118132242536
+          },
+          "best_found_at": 17
+        }
+      ],
+      "stage_seconds": 19976.318084787
+    },
+    {
+      "size": 500,
+      "instances": 6,
+      "restarts": 32,
+      "proven": 0,
+      "mean_fractionality": 23.333333333333332,
+      "mean_duality_gap": null,
+      "mean_ip_seconds": 2214.222610410668,
+      "mean_lp_seconds": 28.28095402416754,
+      "per_arm": {
+        "lp_rounding_control": {
+          "mean_gap": 23.25208193284858,
+          "best_gap": 3.468774664928731,
+          "worst_gap": 40.299460744993894,
+          "mean_seconds": 28.429422256833885,
+          "at_reference": 0,
+          "gaps": [
+            3.468774664928731,
+            7.602717819004674,
+            39.4714179220614,
+            40.299460744993894,
+            23.981437672862434,
+            24.688682773240323
+          ]
+        },
+        "lp_rounding_plus_search": {
+          "mean_gap": 1.5099448721840723,
+          "best_gap": 0.12444584151061613,
+          "worst_gap": 3.480438965998569,
+          "mean_seconds": 34.50328299816707,
+          "at_reference": 0,
+          "gaps": [
+            0.12444584151061613,
+            0.17092719648590743,
+            0.9216762185649451,
+            1.1813716653939714,
+            3.1808093451504234,
+            3.480438965998569
+          ]
+        },
+        "local_search_only": {
+          "mean_gap": 1.5531571068367764,
+          "best_gap": 0.150711230230463,
+          "worst_gap": 3.7145797565031433,
+          "mean_seconds": 7.619576020165671,
+          "at_reference": 0,
+          "gaps": [
+            0.150711230230463,
+            0.19914695361595258,
+            1.0089658780480226,
+            0.9220901526779198,
+            3.3234486699451566,
+            3.7145797565031433
+          ]
+        },
+        "lp_biased_multistart": {
+          "mean_gap": 1.417274841614485,
+          "best_gap": 0.12620993478284465,
+          "worst_gap": 3.3895040594099743,
+          "mean_seconds": 182.51664523282793,
+          "at_reference": 0,
+          "gaps": [
+            0.12620993478284465,
+            0.15681731792088485,
+            0.9220516579605712,
+            0.8841648336564555,
+            3.0249012459561793,
+            3.3895040594099743
+          ]
+        },
+        "alpha_grasp_multistart": {
+          "mean_gap": 1.4180086292056373,
+          "best_gap": 0.12170169642048288,
+          "worst_gap": 3.4037748659184035,
+          "mean_seconds": 156.92021882533604,
+          "at_reference": 0,
+          "gaps": [
+            0.12170169642048288,
+            0.1632843455965202,
+            0.913604271558983,
+            0.8807853497832557,
+            3.0249012459561793,
+            3.4037748659184035
+          ]
+        }
+      },
+      "a_plus": 1.5099448721840723,
+      "no_lp": 1.5531571068367764,
+      "lp_biased": 1.417274841614485,
+      "alpha": 1.4180086292056373,
+      "b_at_reference": 0,
+      "c_at_reference": 0,
+      "b_beats_c": 2,
+      "c_beats_b": 3,
+      "b_beats_ap": 4,
+      "ap_beats_b": 2,
+      "median_best_restart": 21,
+      "median_restarts_to_best": 5,
+      "rows": [
+        {
+          "name": "gs500a-1",
+          "klass": "a",
+          "symmetric": true,
+          "lp_bound": 510177.10580748337,
+          "reference": 510177.10580748337,
+          "proven": false,
+          "ip_status": "not proven (Solution Found)",
+          "ip_seconds": 1687.6123486539982,
+          "fractional": 162,
+          "n_facilities": 500,
+          "gaps": {
+            "lp_rounding_control": 3.468774664928731,
+            "lp_rounding_plus_search": 0.12444584151061613,
+            "local_search_only": 0.150711230230463,
+            "lp_biased_multistart": 0.12620993478284465,
+            "alpha_grasp_multistart": 0.12170169642048288
+          },
+          "best_found_at": 5
+        },
+        {
+          "name": "ga500a-1",
+          "klass": "a",
+          "symmetric": false,
+          "lp_bound": 510280.7913491408,
+          "reference": 510280.7913491408,
+          "proven": false,
+          "ip_status": "not proven (Solution Found)",
+          "ip_seconds": 1665.2037059810027,
+          "fractional": 180,
+          "n_facilities": 500,
+          "gaps": {
+            "lp_rounding_control": 7.602717819004674,
+            "lp_rounding_plus_search": 0.17092719648590743,
+            "local_search_only": 0.19914695361595258,
+            "lp_biased_multistart": 0.15681731792088485,
+            "alpha_grasp_multistart": 0.1632843455965202
+          },
+          "best_found_at": 25
+        },
+        {
+          "name": "gs500b-1",
+          "klass": "b",
+          "symmetric": true,
+          "lp_bound": 532709.1464827482,
+          "reference": 532709.1464827482,
+          "proven": false,
+          "ip_status": "not proven (Solution Found)",
+          "ip_seconds": 2422.568532760997,
+          "fractional": 114,
+          "n_facilities": 500,
+          "gaps": {
+            "lp_rounding_control": 39.4714179220614,
+            "lp_rounding_plus_search": 0.9216762185649451,
+            "local_search_only": 1.0089658780480226,
+            "lp_biased_multistart": 0.9220516579605712,
+            "alpha_grasp_multistart": 0.913604271558983
+          },
+          "best_found_at": 10
+        },
+        {
+          "name": "ga500b-1",
+          "klass": "b",
+          "symmetric": false,
+          "lp_bound": 532625.7107703558,
+          "reference": 532625.7107703558,
+          "proven": false,
+          "ip_status": "not proven (Solution Found)",
+          "ip_seconds": 2362.4306728929987,
+          "fractional": 111,
+          "n_facilities": 500,
+          "gaps": {
+            "lp_rounding_control": 40.299460744993894,
+            "lp_rounding_plus_search": 1.1813716653939714,
+            "local_search_only": 0.9220901526779198,
+            "lp_biased_multistart": 0.8841648336564555,
+            "alpha_grasp_multistart": 0.8807853497832557
+          },
+          "best_found_at": 21
+        },
+        {
+          "name": "gs500c-1",
+          "klass": "c",
+          "symmetric": true,
+          "lp_bound": 602919.2869761484,
+          "reference": 602919.2869761484,
+          "proven": false,
+          "ip_status": "not proven (Solution Found)",
+          "ip_seconds": 3057.656888371006,
+          "fractional": 64,
+          "n_facilities": 500,
+          "gaps": {
+            "lp_rounding_control": 23.981437672862434,
+            "lp_rounding_plus_search": 3.1808093451504234,
+            "local_search_only": 3.3234486699451566,
+            "lp_biased_multistart": 3.0249012459561793,
+            "alpha_grasp_multistart": 3.0249012459561793
+          },
+          "best_found_at": 2
+        },
+        {
+          "name": "ga500c-1",
+          "klass": "c",
+          "symmetric": false,
+          "lp_bound": 602628.8699885613,
+          "reference": 602628.8699885613,
+          "proven": false,
+          "ip_status": "not proven (Solution Found)",
+          "ip_seconds": 2089.8635138040045,
+          "fractional": 69,
+          "n_facilities": 500,
+          "gaps": {
+            "lp_rounding_control": 24.688682773240323,
+            "lp_rounding_plus_search": 3.480438965998569,
+            "local_search_only": 3.7145797565031433,
+            "lp_biased_multistart": 3.3895040594099743,
+            "alpha_grasp_multistart": 3.4037748659184035
+          },
+          "best_found_at": 24
+        }
+      ],
+      "stage_seconds": 15420.131226455
+    },
+    {
+      "size": 750,
+      "instances": 6,
+      "restarts": 32,
+      "proven": 0,
+      "mean_fractionality": 22.311111111111114,
+      "mean_duality_gap": null,
+      "mean_ip_seconds": 3867.1575543723334,
+      "mean_lp_seconds": 205.58376608733388,
+      "per_arm": {
+        "lp_rounding_control": {
+          "mean_gap": 29.861409892592064,
+          "best_gap": 17.285098846022557,
+          "worst_gap": 43.017384559717,
+          "mean_seconds": 206.3380229485002,
+          "at_reference": 0,
+          "gaps": [
+            21.83304195224289,
+            17.285098846022557,
+            40.05893485680892,
+            43.017384559717,
+            28.537242576773142,
+            28.436756563987874
+          ]
+        },
+        "lp_rounding_plus_search": {
+          "mean_gap": 1.342485374472272,
+          "best_gap": 0.2013898478624519,
+          "worst_gap": 2.9513740611202857,
+          "mean_seconds": 230.22393116650065,
+          "at_reference": 0,
+          "gaps": [
+            0.2013898478624519,
+            0.2253026704225457,
+            0.8851573532996334,
+            0.9199700705717708,
+            2.9513740611202857,
+            2.871718243556945
+          ]
+        },
+        "local_search_only": {
+          "mean_gap": 1.3835613748792497,
+          "best_gap": 0.18740629078282206,
+          "worst_gap": 3.2588676669850583,
+          "mean_seconds": 26.48850281633372,
+          "at_reference": 0,
+          "gaps": [
+            0.2021766441320099,
+            0.18740629078282206,
+            0.8817388050459448,
+            0.9758062153872933,
+            3.2588676669850583,
+            2.7953726269423695
+          ]
+        },
+        "lp_biased_multistart": {
+          "mean_gap": 1.2385555485809514,
+          "best_gap": 0.1581160530367636,
+          "worst_gap": 2.857411331001013,
+          "mean_seconds": 833.9647609646632,
+          "at_reference": 0,
+          "gaps": [
+            0.1581160530367636,
+            0.160393646472154,
+            0.7728517125210481,
+            0.8427364008722954,
+            2.857411331001013,
+            2.6398241475824347
+          ]
+        },
+        "alpha_grasp_multistart": {
+          "mean_gap": 1.241588159930779,
+          "best_gap": 0.16196719856792108,
+          "worst_gap": 2.857411331001013,
+          "mean_seconds": 603.7045918638381,
+          "at_reference": 0,
+          "gaps": [
+            0.1811954102771307,
+            0.16196719856792108,
+            0.7728517125210481,
+            0.8362791596351261,
+            2.857411331001013,
+            2.6398241475824347
+          ]
+        }
+      },
+      "a_plus": 1.342485374472272,
+      "no_lp": 1.3835613748792497,
+      "lp_biased": 1.2385555485809514,
+      "alpha": 1.241588159930779,
+      "b_at_reference": 0,
+      "c_at_reference": 0,
+      "b_beats_c": 2,
+      "c_beats_b": 1,
+      "b_beats_ap": 6,
+      "ap_beats_b": 0,
+      "median_best_restart": 8,
+      "median_restarts_to_best": 10,
+      "rows": [
+        {
+          "name": "gs750a-1",
+          "klass": "a",
+          "symmetric": true,
+          "lp_bound": 762586.2287540921,
+          "reference": 762586.2287540921,
+          "proven": false,
+          "ip_status": "not proven (Solution Found)",
+          "ip_seconds": 2278.392251371,
+          "fractional": 257,
+          "n_facilities": 750,
+          "gaps": {
+            "lp_rounding_control": 21.83304195224289,
+            "lp_rounding_plus_search": 0.2013898478624519,
+            "local_search_only": 0.2021766441320099,
+            "lp_biased_multistart": 0.1581160530367636,
+            "alpha_grasp_multistart": 0.1811954102771307
+          },
+          "best_found_at": 11
+        },
+        {
+          "name": "ga750a-1",
+          "klass": "a",
+          "symmetric": false,
+          "lp_bound": 762605.8287031339,
+          "reference": 762605.8287031339,
+          "proven": false,
+          "ip_status": "not proven (Solution Found)",
+          "ip_seconds": 2185.857569258,
+          "fractional": 274,
+          "n_facilities": 750,
+          "gaps": {
+            "lp_rounding_control": 17.285098846022557,
+            "lp_rounding_plus_search": 0.2253026704225457,
+            "local_search_only": 0.18740629078282206,
+            "lp_biased_multistart": 0.160393646472154,
+            "alpha_grasp_multistart": 0.16196719856792108
+          },
+          "best_found_at": 1
+        },
+        {
+          "name": "gs750b-1",
+          "klass": "b",
+          "symmetric": true,
+          "lp_bound": 789808.9480195862,
+          "reference": 789808.9480195862,
+          "proven": false,
+          "ip_status": "not proven (Solution Found)",
+          "ip_seconds": 5107.255240050001,
+          "fractional": 155,
+          "n_facilities": 750,
+          "gaps": {
+            "lp_rounding_control": 40.05893485680892,
+            "lp_rounding_plus_search": 0.8851573532996334,
+            "local_search_only": 0.8817388050459448,
+            "lp_biased_multistart": 0.7728517125210481,
+            "alpha_grasp_multistart": 0.7728517125210481
+          },
+          "best_found_at": 29
+        },
+        {
+          "name": "ga750b-1",
+          "klass": "b",
+          "symmetric": false,
+          "lp_bound": 789810.9754121176,
+          "reference": 789810.9754121176,
+          "proven": false,
+          "ip_status": "not proven (Solution Found)",
+          "ip_seconds": 2826.620731212999,
+          "fractional": 153,
+          "n_facilities": 750,
+          "gaps": {
+            "lp_rounding_control": 43.017384559717,
+            "lp_rounding_plus_search": 0.9199700705717708,
+            "local_search_only": 0.9758062153872933,
+            "lp_biased_multistart": 0.8427364008722954,
+            "alpha_grasp_multistart": 0.8362791596351261
+          },
+          "best_found_at": 8
+        },
+        {
+          "name": "gs750c-1",
+          "klass": "c",
+          "symmetric": true,
+          "lp_bound": 874814.9388130659,
+          "reference": 874814.9388130659,
+          "proven": false,
+          "ip_status": "not proven (Solution Found)",
+          "ip_seconds": 5256.071829627999,
+          "fractional": 80,
+          "n_facilities": 750,
+          "gaps": {
+            "lp_rounding_control": 28.537242576773142,
+            "lp_rounding_plus_search": 2.9513740611202857,
+            "local_search_only": 3.2588676669850583,
+            "lp_biased_multistart": 2.857411331001013,
+            "alpha_grasp_multistart": 2.857411331001013
+          },
+          "best_found_at": 4
+        },
+        {
+          "name": "ga750c-1",
+          "klass": "c",
+          "symmetric": false,
+          "lp_bound": 874968.3735902552,
+          "reference": 874968.3735902552,
+          "proven": false,
+          "ip_status": "not proven (Solution Found)",
+          "ip_seconds": 5548.747704714002,
+          "fractional": 85,
+          "n_facilities": 750,
+          "gaps": {
+            "lp_rounding_control": 28.436756563987874,
+            "lp_rounding_plus_search": 2.871718243556945,
+            "local_search_only": 2.7953726269423695,
+            "lp_biased_multistart": 2.6398241475824347,
+            "alpha_grasp_multistart": 2.6398241475824347
+          },
+          "best_found_at": 1
+        }
+      ],
+      "stage_seconds": 32185.595183049998
+    }
+  ],
+  "california": {
+    "size": 2000,
+    "n_customers": 2000,
+    "instances": 1,
+    "restarts": 10,
+    "proven": 0,
+    "ip_status": "not attempted",
+    "reference": 397600.4830654799,
+    "lp_bound": 397600.4830654799,
+    "mean_fractionality": 0.35000000000000003,
+    "mean_duality_gap": null,
+    "mean_ip_seconds": 0.0,
+    "mean_lp_seconds": 125.94965043100092,
+    "per_arm": {
+      "lp_rounding_control": {
+        "mean_gap": 1.03279375086778,
+        "best_gap": 1.03279375086778,
+        "worst_gap": 1.03279375086778,
+        "mean_seconds": 133.6153843409993,
+        "at_reference": 0,
+        "gaps": [
+          1.03279375086778
+        ]
+      },
+      "lp_rounding_plus_search": {
+        "mean_gap": 0.04212521046298947,
+        "best_gap": 0.04212521046298947,
+        "worst_gap": 0.04212521046298947,
+        "mean_seconds": 170.51018816600117,
+        "at_reference": 0,
+        "gaps": [
+          0.04212521046298947
+        ]
+      },
+      "local_search_only": {
+        "mean_gap": 0.04212521046298947,
+        "best_gap": 0.04212521046298947,
+        "worst_gap": 0.04212521046298947,
+        "mean_seconds": 422.0776312499984,
+        "at_reference": 0,
+        "gaps": [
+          0.04212521046298947
+        ]
+      },
+      "lp_biased_multistart": {
+        "mean_gap": 0.035786350196049206,
+        "best_gap": 0.035786350196049206,
+        "worst_gap": 0.035786350196049206,
+        "mean_seconds": 2098.717151855002,
+        "at_reference": 0,
+        "gaps": [
+          0.035786350196049206
+        ]
+      },
+      "alpha_grasp_multistart": {
+        "mean_gap": 0.035786350196049206,
+        "best_gap": 0.035786350196049206,
+        "worst_gap": 0.035786350196049206,
+        "mean_seconds": 3627.5556998409957,
+        "at_reference": 0,
+        "gaps": [
+          0.035786350196049206
+        ]
+      }
+    },
+    "a_plus": 0.04212521046298947,
+    "no_lp": 0.04212521046298947,
+    "lp_biased": 0.035786350196049206,
+    "alpha": 0.035786350196049206,
+    "b_best_found_at": 2,
+    "c_best_found_at": 4,
+    "b_per_restart_gaps": [
+      0.04212521046298947,
+      0.035786350196049206,
+      0.04212521046298947,
+      0.04212521046298947,
+      0.04212521046298947,
+      0.04212521046298947,
+      0.04212521046298947,
+      0.04212521046298947,
+      0.035786350196049206,
+      0.04212521046298947
+    ],
+    "c_per_restart_gaps": [
+      0.1877173812831083,
+      0.17704093853370767,
+      0.04212521046298947,
+      0.035786350196049206,
+      0.04212521046298947,
+      0.04212521046298947,
+      0.1833797988006772,
+      0.1833797988006772,
+      0.5409209924706075,
+      0.1833797988006772
+    ],
+    "stage_seconds": 6207.981727111997
+  },
+  "wall_seconds": 0.0036711309949168935
+}

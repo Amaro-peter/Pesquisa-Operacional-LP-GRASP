@@ -1,0 +1,213 @@
+### STAGE SET 1: the library's official sizes (250, 500, 750) + California
+
+======================================================================
+=== Koerkel-Ghosh 250x250 -- 12 instances, 32 restarts
+======================================================================
+Running gs250a-1 ...
+  LP=257,536 frac=101/250 | ref=257,536 (not proven (Solution Found), 1673s) | A+=257,982 B=257,909@8 C=257,919@5
+Running gs250a-2 ...
+  LP=257,489 frac=107/250 | ref=257,489 (not proven (Solution Found), 1676s) | A+=257,982 B=257,904@15 C=257,860@23
+Running ga250a-1 ...
+  LP=257,202 frac=90/250 | ref=257,202 (not proven (Solution Found), 1688s) | A+=257,549 B=257,540@20 C=257,538@16
+Running ga250a-2 ...
+  LP=257,430 frac=97/250 | ref=257,430 (not proven (Solution Found), 1659s) | A+=257,766 B=257,766@7 C=257,766@22
+Running gs250b-1 ...
+  LP=274,234 frac=70/250 | ref=274,234 (not proven (Solution Found), 1669s) | A+=278,000 B=277,078@5 C=277,191@10
+Running gs250b-2 ...
+  LP=273,354 frac=70/250 | ref=273,354 (not proven (Solution Found), 1667s) | A+=276,692 B=276,249@23 C=276,249@10
+Running ga250b-1 ...
+  LP=272,991 frac=57/250 | ref=272,991 (not proven (Solution Found), 1660s) | A+=275,386 B=275,386@10 C=275,386@10
+Running ga250b-2 ...
+  LP=273,596 frac=65/250 | ref=273,596 (not proven (Solution Found), 1648s) | A+=275,710 B=275,710@2 C=275,710@2
+Running gs250c-1 ...
+  LP=322,142 frac=36/250 | ref=331,825 (proven, 1261s) | A+=331,825 B=331,825@1 C=331,825@1
+Running gs250c-2 ...
+  LP=321,472 frac=36/250 | ref=321,472 (not proven (Solution Found), 1683s) | A+=332,225 B=332,130@9 C=332,130@5
+Running ga250c-1 ...
+  LP=322,030 frac=32/250 | ref=322,030 (not proven (Solution Found), 1653s) | A+=333,031 B=333,031@6 C=333,031@1
+Running ga250c-2 ...
+  LP=322,261 frac=33/250 | ref=322,261 (not proven (Solution Found), 1680s) | A+=333,189 B=333,189@17 C=333,189@6
+
+Wrote output/kg250/koerkel_ghosh_results.md
+Wrote output/kg250/koerkel_ghosh_results.json
+Total wall-clock: 19976.3s
+=== 250x250 finished in 19977s
+
+======================================================================
+=== Koerkel-Ghosh 500x500 -- 6 instances, 32 restarts
+======================================================================
+Running gs500a-1 ...
+  LP=510,177 frac=162/500 | ref=510,177 (not proven (Solution Found), 1688s) | A+=510,812 B=510,821@5 C=510,798@25
+Running ga500a-1 ...
+  LP=510,281 frac=180/500 | ref=510,281 (not proven (Solution Found), 1665s) | A+=511,153 B=511,081@25 C=511,114@18
+Running gs500b-1 ...
+  LP=532,709 frac=114/500 | ref=532,709 (not proven (Solution Found), 2423s) | A+=537,619 B=537,621@10 C=537,576@3
+Running ga500b-1 ...
+  LP=532,626 frac=111/500 | ref=532,626 (not proven (Solution Found), 2362s) | A+=538,918 B=537,335@21 C=537,317@1
+Running gs500c-1 ...
+  LP=602,919 frac=64/500 | ref=602,919 (not proven (Solution Found), 3058s) | A+=622,097 B=621,157@2 C=621,157@4
+Running ga500c-1 ...
+  LP=602,629 frac=69/500 | ref=602,629 (not proven (Solution Found), 2090s) | A+=623,603 B=623,055@24 C=623,141@5
+
+Wrote output/kg500/koerkel_ghosh_results.md
+Wrote output/kg500/koerkel_ghosh_results.json
+Total wall-clock: 15420.1s
+=== 500x500 finished in 15421s
+
+======================================================================
+=== Koerkel-Ghosh 750x750 -- 6 instances, 32 restarts
+======================================================================
+Running gs750a-1 ...
+  LP=762,586 frac=257/750 | ref=762,586 (not proven (Solution Found), 1832s) | A+=764,122 B=763,792@11 C=763,968@18
+Running ga750a-1 ...
+  LP=762,606 frac=274/750 | ref=762,606 (not proven (Solution Found), 1782s) | A+=764,324 B=763,829@1 C=763,841@30
+Running gs750b-1 ...
+  LP=789,809 frac=155/750 | ref=789,809 (not proven (Solution Found), 6246s) | A+=796,800 B=795,913@29 C=795,913@4
+Running ga750b-1 ...
+  LP=789,811 frac=153/750 | ref=789,811 (not proven (Solution Found), 2410s) | A+=797,077 B=796,467@8 C=796,416@10
+Running gs750c-1 ...
+### STAGE SET 1: the library's official sizes (250, 500, 750) + California
+
+======================================================================
+=== Koerkel-Ghosh 250x250 -- 12 instances, 32 restarts
+======================================================================
+Running gs250a-1 ...
+### STAGE SET 1: the library's official sizes (250, 500, 750) + California
+
+=== Koerkel-Ghosh 250x250 -- already complete (12 instances, 32 restarts); reusing sidecar
+
+=== Koerkel-Ghosh 500x500 -- already complete (6 instances, 32 restarts); reusing sidecar
+
+======================================================================
+=== Koerkel-Ghosh 750x750 -- 6 instances, 32 restarts
+======================================================================
+Running gs750a-1 ...
+  LP=762,586 frac=257/750 | ref=762,586 (not proven (Solution Found), 2278s) | A+=764,122 B=763,792@11 C=763,968@18
+Running ga750a-1 ...
+  LP=762,606 frac=274/750 | ref=762,606 (not proven (Solution Found), 2186s) | A+=764,324 B=763,829@1 C=763,841@30
+Running gs750b-1 ...
+  LP=789,809 frac=155/750 | ref=789,809 (not proven (Solution Found), 5107s) | A+=796,800 B=795,913@29 C=795,913@4
+Running ga750b-1 ...
+  LP=789,811 frac=153/750 | ref=789,811 (not proven (Solution Found), 2827s) | A+=797,077 B=796,467@8 C=796,416@10
+Running gs750c-1 ...
+  LP=874,815 frac=80/750 | ref=874,815 (not proven (Solution Found), 5256s) | A+=900,634 B=899,812@4 C=899,812@5
+Running ga750c-1 ...
+  LP=874,968 frac=85/750 | ref=874,968 (not proven (Solution Found), 5549s) | A+=900,095 B=898,066@1 C=898,066@9
+
+Wrote output/kg750/koerkel_ghosh_results.md
+Wrote output/kg750/koerkel_ghosh_results.json
+Total wall-clock: 32185.6s
+=== 750x750 finished in 32189s
+
+======================================================================
+=== California Housing 2000x2000 -- 10 restarts
+======================================================================
+Building California instance (2,000×2,000)...
+  built in 7.40s
+Solving LP relaxation...
+  bound=397,600.48  time=125.95s  fractional=7/2000  sum_y=57.50
+Arm A: LP rounding (control)...
+  |S|=61  cost=401,706.88  gap=1.0328%
+Arm A+: LP rounding + local search (deterministic ablation)...
+  init |S|=61 gap=1.0328%  →  iters=5 {'insert': 0, 'delete': 3, 'swap': 2}  final |S|=58 gap=0.0421%  time=170.51s
+Arm D: local search only, no LP (control)...
+  init |S|=1  →  iters=73 {'insert': 57, 'delete': 0, 'swap': 16}  final |S|=58 gap=0.0421%  time=422.08s
+Arm B: LP-biased MULTISTART (10 restarts)...
+  best gap=0.0358% at restart 2/10  |S|=58  time=2098.72s
+Arm C: alpha-GRASP MULTISTART (10 restarts)...
+  best gap=0.0358% at restart 4/10  |S|=58  time=3627.56s
+
+Wrote output/california_4M_results.md
+Wrote output/california_4M_results.json
+Total wall-clock: 6208.0s
+=== California finished in 6211s
+
+Wrote output/full_study.md
+Wrote output/full_study.json
+Total wall-clock: 640.0 min
+### STAGE SET 2: provability frontier (100, 150, 200)
+
+======================================================================
+=== Koerkel-Ghosh 100x100 -- 12 instances, 32 restarts
+======================================================================
+Running gs100a-1 ...
+  LP=104,959 frac=19/100 | ref=104,979 (proven, 1s) | A+=104,982 B=104,979@12 C=104,979@2
+Running gs100a-2 ...
+  LP=104,709 frac=37/100 | ref=104,825 (proven, 2s) | A+=104,825 B=104,825@1 C=104,825@32
+Running ga100a-1 ...
+  LP=104,956 frac=34/100 | ref=105,009 (proven, 2s) | A+=105,009 B=105,009@4 C=105,009@1
+Running ga100a-2 ...
+  LP=104,938 frac=47/100 | ref=105,062 (proven, 6s) | A+=105,143 B=105,062@20 C=105,100@7
+Running gs100b-1 ...
+  LP=115,091 frac=32/100 | ref=115,947 (proven, 15s) | A+=116,026 B=115,947@2 C=115,947@1
+Running gs100b-2 ...
+  LP=115,652 frac=35/100 | ref=117,197 (proven, 82s) | A+=117,197 B=117,197@7 C=117,197@23
+Running ga100b-1 ...
+  LP=114,979 frac=26/100 | ref=116,173 (proven, 20s) | A+=116,199 B=116,173@3 C=116,173@12
+Running ga100b-2 ...
+  LP=115,679 frac=33/100 | ref=116,818 (proven, 36s) | A+=117,184 B=116,818@22 C=116,818@9
+Running gs100c-1 ...
+  LP=146,017 frac=17/100 | ref=149,436 (proven, 15s) | A+=150,738 B=149,436@1 C=149,436@1
+Running gs100c-2 ...
+  LP=145,709 frac=10/100 | ref=149,991 (proven, 10s) | A+=149,991 B=149,991@1 C=149,991@2
+Running ga100c-1 ...
+  LP=145,309 frac=13/100 | ref=149,495 (proven, 9s) | A+=149,495 B=149,495@1 C=149,495@1
+Running ga100c-2 ...
+  LP=148,096 frac=14/100 | ref=151,787 (proven, 11s) | A+=151,787 B=151,787@7 C=151,787@1
+
+Wrote output/kg100/koerkel_ghosh_results.md
+Wrote output/kg100/koerkel_ghosh_results.json
+Total wall-clock: 232.0s
+=== 100x100 finished in 233s
+
+======================================================================
+=== Koerkel-Ghosh 150x150 -- 6 instances, 32 restarts
+======================================================================
+Running gs150a-1 ...
+  LP=156,178 frac=59/150 | ref=156,337 (proven, 40s) | A+=156,392 B=156,337@4 C=156,337@23
+Running ga150a-1 ...
+  LP=156,019 frac=63/150 | ref=156,226 (proven, 99s) | A+=156,293 B=156,226@13 C=156,226@1
+Running gs150b-1 ...
+  LP=168,104 frac=36/150 | ref=169,309 (proven, 68s) | A+=169,644 B=169,309@4 C=169,309@4
+Running ga150b-1 ...
+  LP=168,739 frac=43/150 | ref=170,849 (proven, 1255s) | A+=170,849 B=170,849@2 C=170,849@5
+Running gs150c-1 ...
+  LP=205,041 frac=17/150 | ref=210,149 (proven, 28s) | A+=210,149 B=210,149@1 C=210,149@1
+Running ga150c-1 ...
+  LP=206,328 frac=21/150 | ref=211,338 (proven, 39s) | A+=211,338 B=211,338@3 C=211,338@3
+
+Wrote output/kg150/koerkel_ghosh_results.md
+Wrote output/kg150/koerkel_ghosh_results.json
+Total wall-clock: 1567.3s
+=== 150x150 finished in 1568s
+
+======================================================================
+=== Koerkel-Ghosh 200x200 -- 6 instances, 32 restarts
+======================================================================
+Running gs200a-1 ...
+  LP=206,925 frac=86/200 | ref=207,136 (proven, 412s) | A+=207,238 B=207,143@13 C=207,148@19
+Running ga200a-1 ...
+  LP=206,995 frac=89/200 | ref=207,224 (proven, 564s) | A+=207,406 B=207,253@30 C=207,301@9
+Running gs200b-1 ...
+  LP=220,956 frac=53/200 | ref=220,956 (not proven (Solution Found), 1656s) | A+=224,120 B=223,393@3 C=223,393@30
+Running ga200b-1 ...
+  LP=221,158 frac=49/200 | ref=221,158 (not proven (Solution Found), 1657s) | A+=223,887 B=223,490@3 C=223,490@3
+Running gs200c-1 ...
+  LP=265,125 frac=29/200 | ref=273,768 (proven, 357s) | A+=273,920 B=273,768@1 C=273,768@2
+Running ga200c-1 ...
+  LP=265,128 frac=31/200 | ref=273,713 (proven, 358s) | A+=273,748 B=273,713@2 C=273,713@19
+
+Wrote output/kg200/koerkel_ghosh_results.md
+Wrote output/kg200/koerkel_ghosh_results.json
+Total wall-clock: 5098.9s
+=== 200x200 finished in 5100s
+
+Wrote output/full_study.md
+Wrote output/full_study.json
+Total wall-clock: 115.0 min
+### STAGE SET 3: compose the complete six-rung ladder from every sidecar
+
+Wrote output/full_study.md
+Wrote output/full_study.json
+Total wall-clock: 0.0 min
+### ALL STAGES COMPLETE

@@ -6,7 +6,7 @@ tight. Both randomized arms run as **multistart** procedures, which is what make
 GRASPs; deterministic arms run once, because restarting them reproduces the same solution.
 
 > **Gaps here are true optimality gaps.** CBC proved the integer optimum on all
-> 18 instances, so every percentage below is measured against a proven
+> 12 instances, so every percentage below is measured against a proven
 > optimum rather than against a lower bound.
 
 > **Provenance.** Every number was measured by the run described in §6 and written by
@@ -24,12 +24,12 @@ GRASPs; deterministic arms run once, because restarting them reproduces the same
 
 | | |
 |---|---|
-| Instances | 18 at 100×100 (3 classes × symmetric/asymmetric × 3) |
+| Instances | 12 at 100×100 (3 classes × symmetric/asymmetric × 2) |
 | Restarts per randomized arm | **32** |
 | α (baseline) | 0.2 |
-| Mean LP fractionality | 27.3% of facilities |
-| Mean LP duality gap | 1.16% |
-| Integer optima proven | 18 / 18 |
+| Mean LP fractionality | 26.4% of facilities |
+| Mean LP duality gap | 1.25% |
+| Integer optima proven | 12 / 12 |
 
 The duality gap is what makes this family a real test: the LP bound sits measurably
 below the optimum, so an LP-guided method cannot simply read the answer off the
@@ -37,39 +37,39 @@ relaxation the way it can on Euclidean instances.
 
 ## 2. Results
 
-Mean optimality gap over 18 instances. Randomized arms report best-of-32.
+Mean optimality gap over 12 instances. Randomized arms report best-of-32.
 
 | Arm | Type | Mean optimality gap | Instances solved to optimality |
 |---|---|---|---|
-| A · LP rounding only | deterministic | 10.0823% | 0 / 18 |
-| **A+ · LP rounding + local search** | deterministic | **0.1308%** | 10 / 18 |
-| D · Local search only (no LP) | deterministic | 0.1432% | 6 / 18 |
-| **B · LP-biased multistart** | best of 32 | **0.0000%** | 18 / 18 |
-| **C · α-GRASP multistart** | best of 32 | **0.0341%** | 14 / 18 |
+| A · LP rounding only | deterministic | 10.9032% | 0 / 12 |
+| **A+ · LP rounding + local search** | deterministic | **0.1129%** | 6 / 12 |
+| D · Local search only (no LP) | deterministic | 0.0920% | 4 / 12 |
+| **B · LP-biased multistart** | best of 32 | **0.0000%** | 12 / 12 |
+| **C · α-GRASP multistart** | best of 32 | **0.0030%** | 11 / 12 |
 
 ## 3. LP-biased GRASP vs. classical GRASP
 
 Both arms get the same budget of 32 restarts and the same local search. They differ
 only in how each restart's starting solution is built.
 
-- **B beat C on 4** instances, **lost on 0**, tied on 14.
-- Mean optimality gap: **0.0000%** (B) against **0.0341%** (C).
-- Optimal solutions found: **18/18** (B) against **14/18** (C).
-- Median restart that produced the winner: **2** (B), **2** (C), out of 32.
+- **B beat C on 1** instances, **lost on 0**, tied on 11.
+- Mean optimality gap: **0.0000%** (B) against **0.0030%** (C).
+- Optimal solutions found: **12/12** (B) against **11/12** (C).
+- Median restart that produced the winner: **4** (B), **2** (C), out of 32.
 
-**With multistart, the LP-biased construction beats the classical baseline** by 0.0341 pp on average.
+**With multistart, the LP-biased construction beats the classical baseline** by 0.0030 pp on average, and beat C on 1 of 12 instances (losing 0, tying 11).
 
 ## 4. Does multistart pay for itself?
 
 A best-of-N result costs N times the work of a single run. The fair question is not
 whether B beats A+ at N restarts, but how many restarts B needs to match A+ at all.
 
-- B beat A+ on **8** instances, lost on **0**, tied on 10.
-- On the 18 instances where B reached A+'s quality at all, it needed a
-  median of **1** restart to do so.
+- B beat A+ on **6** instances, lost on **0**, tied on 6.
+- On the 12 instances where B reached A+'s quality at all, it needed a
+  median of **2** restarts to do so.
 
 **Multistart overturns the single-start result.** B reaches 0.0000% against
-A+'s 0.1308%, so with a restart budget the randomized construction does earn
+A+'s 0.1129%, so with a restart budget the randomized construction does earn
 its place — the earlier finding was an artifact of running it exactly once.
 
 ## 5. Per-instance detail
@@ -78,22 +78,16 @@ its place — the earlier finding was an artifact of running it exactly once.
 |---|---|---|---|---|---|---|---|
 | `gs100a-1` | 104,979 | 0.02% | 0.253% | 0.003% | 0.062% | 0.000% | 0.000% |
 | `gs100a-2` | 104,825 | 0.11% | 0.342% | 0.000% | 0.082% | 0.000% | 0.000% |
-| `gs100a-3` | 104,838 | 0.04% | 0.070% | 0.000% | 0.083% | 0.000% | 0.069% |
 | `ga100a-1` | 105,009 | 0.05% | 0.597% | 0.000% | 0.064% | 0.000% | 0.000% |
 | `ga100a-2` | 105,062 | 0.12% | 1.238% | 0.077% | 0.028% | 0.000% | 0.036% |
-| `ga100a-3` | 104,986 | 0.08% | 1.146% | 0.000% | 0.219% | 0.000% | 0.000% |
 | `gs100b-1` | 115,947 | 0.74% | 25.638% | 0.068% | 0.000% | 0.000% | 0.000% |
 | `gs100b-2` | 117,197 | 1.34% | 27.919% | 0.000% | 0.356% | 0.000% | 0.000% |
-| `gs100b-3` | 115,721 | 0.88% | 12.865% | 0.061% | 0.518% | 0.000% | 0.022% |
 | `ga100b-1` | 116,173 | 1.04% | 25.457% | 0.022% | 0.299% | 0.000% | 0.000% |
 | `ga100b-2` | 116,818 | 0.98% | 26.950% | 0.313% | 0.199% | 0.000% | 0.000% |
-| `ga100b-3` | 116,578 | 0.95% | 28.405% | 0.938% | 0.653% | 0.000% | 0.488% |
 | `gs100c-1` | 149,436 | 2.34% | 6.288% | 0.871% | 0.000% | 0.000% | 0.000% |
 | `gs100c-2` | 149,991 | 2.94% | 5.892% | 0.000% | 0.015% | 0.000% | 0.000% |
-| `gs100c-3` | 147,846 | 1.45% | 3.426% | 0.000% | 0.000% | 0.000% | 0.000% |
 | `ga100c-1` | 149,495 | 2.88% | 6.155% | 0.000% | 0.000% | 0.000% | 0.000% |
 | `ga100c-2` | 151,787 | 2.49% | 4.109% | 0.000% | 0.000% | 0.000% | 0.000% |
-| `ga100c-3` | 148,697 | 2.43% | 4.731% | 0.000% | 0.000% | 0.000% | 0.000% |
 
 ## 6. Reproduction
 
@@ -103,11 +97,11 @@ python -m scripts.run_koerkel_ghosh --size 100 --restarts 32 --alpha 0.2
 
 | Run metadata | |
 |---|---|
-| Generated at | 2026-09-12 15:48 UTC |
+| Generated at | 2026-09-14 09:03 UTC |
 | Generated by | `run_koerkel_ghosh.py` → `render_report` |
 | Git commit | `ae61a4e (working tree modified)` |
 | Restart seeds | 1, 2, 3, 4, 5, 6, 7, 8 … |
-| Total wall-clock | 369.7 s |
+| Total wall-clock | 232.0 s |
 | Python | 3.14.6 |
 | NumPy / SciPy | 2.5.3 / 1.18.1 |
 

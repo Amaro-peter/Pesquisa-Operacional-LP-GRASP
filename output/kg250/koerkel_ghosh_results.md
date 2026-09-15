@@ -1,0 +1,112 @@
+# Körkel-Ghosh Benchmark — Multistart LP-Biased GRASP vs. Classical α-GRASP
+
+The standard hard family for the UFLP: allocation costs are drawn at random rather
+than from a metric embedding, which destroys the structure that makes the relaxation
+tight. Both randomized arms run as **multistart** procedures, which is what makes them
+GRASPs; deterministic arms run once, because restarting them reproduces the same solution.
+
+> **Mixed references.** CBC proved the integer optimum on 1 of
+> 12 instances; the rest are measured against the LP bound and therefore
+> OVERSTATE the true optimality gap. The `reference.kind` field in the JSON says which
+> is which, per instance.
+
+> **Provenance.** Every number was measured by the run described in §6 and written by
+> `render_report` in `run_koerkel_ghosh.py`. No value is hardcoded; every comparative
+> word is computed. Raw records: `koerkel_ghosh_results.json`.
+
+> **Generated-to-spec instances, not the official UflLib files.** The official archives
+> were unreachable from this environment (HTTP 403). The generator follows the published
+> specification exactly, but the random draws differ, so objective values are **not
+> comparable with published KG results**. Arm-versus-arm comparison is unaffected.
+
+---
+
+## 1. Setup
+
+| | |
+|---|---|
+| Instances | 12 at 250×250 (3 classes × symmetric/asymmetric × 2) |
+| Restarts per randomized arm | **32** |
+| α (baseline) | 0.2 |
+| Mean LP fractionality | 26.5% of facilities |
+| Mean LP duality gap | 0.25% |
+| Integer optima proven | 1 / 12 |
+
+The duality gap is what makes this family a real test: the LP bound sits measurably
+below the optimum, so an LP-guided method cannot simply read the answer off the
+relaxation the way it can on Euclidean instances.
+
+## 2. Results
+
+Mean gap vs reference over 12 instances. Randomized arms report best-of-32.
+
+| Arm | Type | Mean gap vs reference | Instances solved to optimality |
+|---|---|---|---|
+| A · LP rounding only | deterministic | 18.1775% | 0 / 12 |
+| **A+ · LP rounding + local search** | deterministic | **1.2522%** | 1 / 12 |
+| D · Local search only (no LP) | deterministic | 1.3034% | 1 / 12 |
+| **B · LP-biased multistart** | best of 32 | **1.2030%** | 1 / 12 |
+| **C · α-GRASP multistart** | best of 32 | **1.2053%** | 1 / 12 |
+
+## 3. LP-biased GRASP vs. classical GRASP
+
+Both arms get the same budget of 32 restarts and the same local search. They differ
+only in how each restart's starting solution is built.
+
+- **B beat C on 2** instances, **lost on 2**, tied on 8.
+- Mean gap vs reference: **1.2030%** (B) against **1.2053%** (C).
+- Optimal solutions found: **1/12** (B) against **1/12** (C).
+- Median restart that produced the winner: **8** (B), **8** (C), out of 32.
+
+**With multistart the two constructions are indistinguishable on this family.** They split the 4 decided instances 2–2 and tied on 8 of 12; the 0.0023 pp difference in means is not supported by the per-instance record.
+
+## 4. Does multistart pay for itself?
+
+A best-of-N result costs N times the work of a single run. The fair question is not
+whether B beats A+ at N restarts, but how many restarts B needs to match A+ at all.
+
+- B beat A+ on **6** instances, lost on **0**, tied on 6.
+- On the 12 instances where B reached A+'s quality at all, it needed a
+  median of **2** restarts to do so.
+
+**Multistart overturns the single-start result.** B reaches 1.2030% against
+A+'s 1.2522%, so with a restart budget the randomized construction does earn
+its place — the earlier finding was an artifact of running it exactly once.
+
+## 5. Per-instance detail
+
+| Instance | Optimum | LP gap | A | A+ | D | B (best/32) | C (best/32) |
+|---|---|---|---|---|---|---|---|
+| `gs250a-1` ⚠ | 257,536 | 0.00% | 3.523% | 0.173% | 0.220% | 0.145% | 0.149% |
+| `gs250a-2` ⚠ | 257,489 | 0.00% | 3.036% | 0.191% | 0.194% | 0.161% | 0.144% |
+| `ga250a-1` ⚠ | 257,202 | 0.00% | 2.186% | 0.135% | 0.141% | 0.131% | 0.131% |
+| `ga250a-2` ⚠ | 257,430 | 0.00% | 2.105% | 0.130% | 0.184% | 0.130% | 0.130% |
+| `gs250b-1` ⚠ | 274,234 | 0.00% | 34.231% | 1.373% | 1.078% | 1.037% | 1.078% |
+| `gs250b-2` ⚠ | 273,354 | 0.00% | 35.076% | 1.221% | 1.516% | 1.059% | 1.059% |
+| `ga250b-1` ⚠ | 272,991 | 0.00% | 35.476% | 0.877% | 1.307% | 0.877% | 0.877% |
+| `ga250b-2` ⚠ | 273,596 | 0.00% | 36.306% | 0.773% | 0.848% | 0.773% | 0.773% |
+| `gs250c-1` | 331,825 | 3.01% | 13.133% | 0.000% | 0.000% | 0.000% | 0.000% |
+| `gs250c-2` ⚠ | 321,472 | 0.00% | 18.278% | 3.345% | 3.345% | 3.315% | 3.315% |
+| `ga250c-1` ⚠ | 322,030 | 0.00% | 17.601% | 3.416% | 3.416% | 3.416% | 3.416% |
+| `ga250c-2` ⚠ | 322,261 | 0.00% | 17.178% | 3.391% | 3.391% | 3.391% | 3.391% |
+
+⚠ = integer optimum not proven; that row is measured against the LP bound.
+
+## 6. Reproduction
+
+```bash
+python -m scripts.run_koerkel_ghosh --size 250 --restarts 32 --alpha 0.2
+```
+
+| Run metadata | |
+|---|---|
+| Generated at | 2026-09-13 09:53 UTC |
+| Generated by | `run_koerkel_ghosh.py` → `render_report` |
+| Git commit | `ae61a4e (working tree modified)` |
+| Restart seeds | 1, 2, 3, 4, 5, 6, 7, 8 … |
+| Total wall-clock | 19976.3 s |
+| Python | 3.14.6 |
+| NumPy / SciPy | 2.5.3 / 1.18.1 |
+
+Raw measurements: [`koerkel_ghosh_results.json`](koerkel_ghosh_results.json).
+
